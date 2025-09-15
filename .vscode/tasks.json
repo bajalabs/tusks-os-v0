@@ -1,0 +1,16 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Serve: localhost:1234",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"python3 -m http.server 1234 --bind 127.0.0.1"
+			],
+			"isBackground": true,
+			"group": "build"
+		}
+	]
+}
