@@ -34,6 +34,22 @@ TUSK-OS v0 is a pure-static, local-first CRM that runs entirely in your browser.
 - `PRIVATE_REPO_SETUP.md` – how to pair with a private companion repo for data/env
 - `LICENSE`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md` – open-source essentials
 
+## Dual-remote setup
+
+We support using a private companion repository alongside this public repo:
+
+- Public: `origin` → https://github.com/bajalabs/tusks-os-v0
+- Private: `private` → https://github.com/bajalabs/tusks-os-private
+
+Push to both as needed:
+
+```sh
+git push origin main
+git push private main
+```
+
+Use branches to isolate local launchers, tasks, etc. (e.g., `localhost`). Keep secrets and machine-specific files only in the private repo.
+
 ## Contributing
 
 See `CONTRIBUTING.md`. By participating, you agree to the `CODE_OF_CONDUCT.md`.
