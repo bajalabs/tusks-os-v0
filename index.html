@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TUSK-OS v0 • Launcher</title>
+  <link rel="stylesheet" href="tusk-os-static/lib/ui.css" />
+  <style>
+    .launcher { max-width: 880px; margin: 40px auto; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .card a.btn { display: inline-block; text-align: center; width: 100%; }
+    .muted { opacity: 0.8; }
+    footer { margin-top: 24px; opacity: 0.7; font-size: 12px; text-align: center; }
+  </style>
+  <script>
+    // no JS required; this page is static
+  </script>
+  <link rel="icon" href="data:," />
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Choose a TUSK-OS v0 variant to launch (SQLite/sql.js or IndexedDB)." />
+</head>
+<body>
+  <header class="app-header">
+    <div class="inner">
+      <div class="brand"><span class="dot"></span> TUSK-OS</div>
+      <nav class="nav">
+        <a class="active" href="#">Launcher</a>
+        <a href="tusk-os-static/apps/start.html">SQLite</a>
+        <a href="tusk-os-idb/apps/start.html">IndexedDB</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container launcher">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="kicker">Welcome</div>
+          <div class="card-title">Choose your workspace</div>
+        </div>
+      </div>
+      <p class="muted">This repo contains two variants that both run fully in your browser. When served over localhost, each variant gets its own origin-scoped storage.</p>
+      <div class="cards">
+        <div class="card">
+          <div class="card-header"><div class="card-title">TUSK-OS (SQLite/sql.js)</div></div>
+          <p class="muted">SQLite engine in WebAssembly (sql.js) with a local JSON fallback. Export/import a real .sqlite file.</p>
+          <a class="btn" href="tusk-os-static/apps/start.html">Open SQLite variant</a>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">TUSK-OS (IndexedDB)</div></div>
+          <p class="muted">Native IndexedDB storage with export to JSON, CSV, and .sqlite (via sql.js in-memory export).</p>
+          <a class="btn" href="tusk-os-idb/apps/start.html">Open IndexedDB variant</a>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Served locally? Try http://localhost:1234/ (scripts/serve_localhost.sh)
+    </footer>
+  </main>
+
+  <div id="toast" class="toast"></div>
+</body>
+</html>

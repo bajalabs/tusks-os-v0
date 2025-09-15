@@ -8,7 +8,7 @@ Pure-static, local-first system using IndexedDB as primary storage. Exports to J
 ## Structure
 - `lib/idb.js` — IndexedDB wrapper (TuskIDB)
 - `lib/sqlite-export.js` — Builds a SQLite DB in-memory using sql.js from IDB data
-- `lib/ui.css` — Uses the shared UI from `tusk-os-static/lib/ui.css`
+- `lib/ui.css` — Shared dark UI for all IDB pages
 - `apps/start.html` — Dashboard + export (JSON/CSV/SQLite) and totals
 - `apps/settings.html` — Company/currency settings stored in IDB
 - `apps/crm.html` — Leads (extended fields)
@@ -33,5 +33,5 @@ Pure-static, local-first system using IndexedDB as primary storage. Exports to J
 - SQLite: Creates `leads` table and fills it, downloadable as `tusk-idb.sqlite`
 
 ## Offline sql.js
-We reuse the existing sql.js assets under `tusk-os-static/lib/sqljs`. If running via file://, ensure `sql-wasm-b64.js` is present to avoid wasm fetch CORS. The exporter will try local assets first.
+The SQLite exporter uses vendored sql.js assets under `lib/sqljs/`. If running via file://, ensure `sql-wasm-b64.js` is present to avoid wasm fetch CORS. The exporter prefers local assets and works entirely offline.
 

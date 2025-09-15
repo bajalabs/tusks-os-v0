@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TUSK • CRM (IDB)</title>
+  <title>TUSK • CRM</title>
   <link rel="stylesheet" href="../lib/ui.css" />
-  <script defer src="../lib/idb.js"></script>
+  <script defer src="../lib/db.js"></script>
 </head>
 <body>
   <header class="app-header">
@@ -24,7 +24,7 @@
       <div class="card-header">
         <div>
           <div class="kicker">Sales</div>
-          <div class="card-title">Leads (IndexedDB)</div>
+          <div class="card-title">Leads</div>
         </div>
         <div class="card-actions">
           <button class="btn primary" id="add">+ New Lead</button>
@@ -33,9 +33,7 @@
       <div class="table-wrap">
         <table class="table">
           <thead>
-            <tr>
-              <th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Company</th><th>Source</th><th>Owner</th><th>Stage</th><th>Tags</th><th>Created</th>
-            </tr>
+            <tr><th>ID</th><th>Name</th><th>Email</th><th>Status</th><th>Created</th></tr>
           </thead>
           <tbody id="rows"></tbody>
         </table>
@@ -54,34 +52,6 @@
         <label for="leadEmail">Email (optional)</label>
         <input class="input" id="leadEmail" placeholder="jane@example.com" />
       </div>
-      <div class="field">
-        <label for="leadPhone">Phone</label>
-        <input class="input" id="leadPhone" placeholder="+1 555-0100" />
-      </div>
-      <div class="field">
-        <label for="leadCompany">Company</label>
-        <input class="input" id="leadCompany" placeholder="Acme Inc." />
-      </div>
-      <div class="field">
-        <label for="leadSource">Source</label>
-        <input class="input" id="leadSource" placeholder="Website" />
-      </div>
-      <div class="field">
-        <label for="leadOwner">Owner</label>
-        <input class="input" id="leadOwner" placeholder="you@company.com" />
-      </div>
-      <div class="field">
-        <label for="leadStage">Stage</label>
-        <input class="input" id="leadStage" placeholder="New" />
-      </div>
-      <div class="field">
-        <label for="leadTags">Tags (comma separated)</label>
-        <input class="input" id="leadTags" placeholder="vip, enterprise" />
-      </div>
-      <div class="field">
-        <label for="leadNotes">Notes</label>
-        <input class="input" id="leadNotes" placeholder="Short note" />
-      </div>
     </div>
     <div class="dialog-footer">
       <button class="btn" id="cancelLead">Cancel</button>
@@ -99,35 +69,26 @@
       setTimeout(()=>el.classList.remove('show'), ms);
     }
 
-    async function load(){
-      await TuskIDB.ready();
-      const rows = await TuskIDB.listLeads(500);
+    async function load() {
+      await TuskDB.ready();
+      const rows = await TuskDB.select(
+        "SELECT id, name, email, status, created_at FROM leads ORDER BY datetime(created_at) DESC, id DESC LIMIT 500"
+      );
       const tbody = document.getElementById('rows');
       if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="10" class="empty">No leads yet. Click “New Lead”.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan=\"5\" class=\"empty\">No leads yet. Click “New Lead”.</td></tr>`;
         return;
       }
       tbody.innerHTML = rows.map(r =>
-        `<tr>
-          <td>${r.id||''}</td>
-          <td>${r.name||''}</td>
-          <td>${r.email||''}</td>
-          <td>${r.phone||''}</td>
-          <td>${r.company||''}</td>
-          <td>${r.source||''}</td>
-          <td>${r.owner||''}</td>
-          <td>${r.stage||'New'}</td>
-          <td>${(r.tags||[]).join(', ')}</td>
-          <td>${r.created_at||''}</td>
-        </tr>`
-      ).join('');
+        `<tr><td>${r.id}</td><td>${r.name}</td><td>${r.email || ''}</td><td>${r.status}</td><td>${r.created_at}</td></tr>`
+      ).join("");
     }
 
     function openDialog(){
       const d = document.getElementById('leadDialog');
       document.getElementById('leadName').value = '';
       document.getElementById('leadEmail').value = '';
-      if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open','');
+      if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open', '');
       setTimeout(()=> document.getElementById('leadName').focus(), 0);
     }
     function closeDialog(){
@@ -138,15 +99,8 @@
     async function createLead(){
       const name = document.getElementById('leadName').value.trim();
       const email = document.getElementById('leadEmail').value.trim() || null;
-      const phone = document.getElementById('leadPhone').value.trim() || null;
-      const company = document.getElementById('leadCompany').value.trim() || null;
-      const source = document.getElementById('leadSource').value.trim() || null;
-      const owner = document.getElementById('leadOwner').value.trim() || null;
-      const stage = document.getElementById('leadStage').value.trim() || 'New';
-      const tags = (document.getElementById('leadTags').value || '').split(',').map(s => s.trim()).filter(Boolean);
-      const notes = document.getElementById('leadNotes').value.trim() || null;
       if (!name) { showToast('Name is required'); return; }
-      await TuskIDB.addLead({ name, email, phone, company, source, owner, stage, tags, notes });
+      await TuskDB.exec([["INSERT INTO leads(name, email, status, created_at) VALUES(?, ?, 'new', datetime('now'))", [name, email]]]);
       closeDialog();
       showToast('Lead created');
       load();
@@ -156,7 +110,7 @@
       document.getElementById('add').onclick = openDialog;
       document.getElementById('cancelLead').onclick = closeDialog;
       document.getElementById('createLead').onclick = createLead;
-      document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeDialog(); });
+      document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeDialog(); });
       load();
     });
   </script>

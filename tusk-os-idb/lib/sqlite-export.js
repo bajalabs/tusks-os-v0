@@ -1,6 +1,6 @@
 (function(){
   // Export IndexedDB data to a SQLite database (Uint8Array) using sql.js
-  const SQLJS_BASE = '../../tusk-os-static/lib/sqljs/';
+  const SQLJS_BASE = './sqljs/';
 
   function bytesFromB64(b64){
     const s = atob(b64);

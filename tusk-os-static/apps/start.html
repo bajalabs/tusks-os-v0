@@ -1,0 +1,171 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TUSK • Start</title>
+  <link rel="stylesheet" href="../lib/ui.css" />
+  <script defer src="../lib/db.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="inner">
+      <div class="brand"><span class="dot"></span> TUSK-OS</div>
+      <nav class="nav">
+        <a class="active" href="start.html">Home</a>
+        <a href="crm.html">CRM</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="kicker">Overview</div>
+          <div class="card-title">Local Workspace</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Company</div></div>
+            <div class="subtle">Name</div>
+            <div id="company" style="font-weight:600; margin-top:4px;">—</div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Currency</div></div>
+            <div class="subtle">Default</div>
+            <div id="currency" style="font-weight:600; margin-top:4px;">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="kicker">Database</div>
+          <div class="card-title" id="dbTitle">Local-first SQLite</div>
+        </div>
+        <div class="card-actions">
+          <button class="btn secondary" id="export">Export</button>
+          <label class="btn" for="import" id="importLabel">Import</label>
+          <input id="import" type="file" accept=".sqlite,application/octet-stream" style="display:none" />
+        </div>
+      </div>
+      <div id="status" class="subtle"></div>
+      <div class="spacer"></div>
+      <div class="banner">
+        This workspace runs fully in your browser using WebAssembly (sql.js). Data is saved to your browser storage. Use Export to back up to a real SQLite file.
+      </div>
+      <div id="migrateRow" class="banner" style="display:none; align-items:center; justify-content:space-between; gap:12px;">
+        <div>
+          Local fallback data detected. You can migrate it into the SQLite database so CRM sees it everywhere.
+        </div>
+        <button id="migrateBtn" class="btn">Migrate now</button>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    function showToast(msg, ms = 2200) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), ms);
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      try { await TuskDB.ready(); } catch (err) { console.error(err); }
+
+      const cfg = TuskDB.getSettings();
+      document.getElementById('company').textContent = cfg.company || '—';
+      document.getElementById('currency').textContent = cfg.currency || '—';
+
+      // Adjust UI by DB mode
+      const mode = TuskDB.mode;
+      const dbTitle = document.getElementById('dbTitle');
+      const importInput = document.getElementById('import');
+      const importLabel = document.getElementById('importLabel');
+      if (mode === 'local') {
+        dbTitle.textContent = 'Local storage (fallback)';
+        importInput.accept = 'application/json,.json';
+        importLabel.textContent = 'Import .json';
+      } else {
+        dbTitle.textContent = 'Local-first SQLite';
+        importInput.accept = '.sqlite,application/octet-stream';
+        importLabel.textContent = 'Import .sqlite';
+      }
+
+      // Offer migration if we're in SQLite mode and have local leads
+      try {
+        const migrateRow = document.getElementById('migrateRow');
+        const migrateBtn = document.getElementById('migrateBtn');
+        const localCount = TuskDB.countLocalLeads();
+        if (mode === 'sqlite' && localCount > 0) {
+          migrateRow.style.display = 'flex';
+          migrateBtn.onclick = async () => {
+            migrateBtn.disabled = true;
+            try {
+              const res = await TuskDB.migrateLocalToSQLite();
+              document.getElementById('status').textContent = `Migrated ${res.migrated} local records to SQLite.`;
+              showToast(`Migrated ${res.migrated} records`);
+              migrateRow.style.display = 'none';
+            } catch (e) {
+              console.error(e);
+              document.getElementById('status').textContent = 'Migration failed';
+              showToast('Migration failed');
+            } finally {
+              migrateBtn.disabled = false;
+            }
+          };
+        }
+      } catch (e) {
+        console.warn('Migration banner check failed', e);
+      }
+
+      document.getElementById('export').onclick = async () => {
+        try {
+          const bytes = await TuskDB.export();
+          const isLocal = TuskDB.mode === 'local';
+          const blob = new Blob([bytes], { type: isLocal ? 'application/json' : 'application/x-sqlite3' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = isLocal ? 'tusk-local-backup.json' : 'tusk.sqlite';
+          a.click();
+          URL.revokeObjectURL(a.href);
+          const msg = isLocal ? 'Exported tusk-local-backup.json' : 'Exported tusk.sqlite';
+          document.getElementById('status').textContent = msg;
+          showToast(msg);
+        } catch (e) {
+          console.error(e);
+          document.getElementById('status').textContent = 'Export failed';
+          showToast('Export failed');
+        }
+      };
+
+      document.getElementById('import').onchange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+          const buf = await file.arrayBuffer();
+          await TuskDB.import(new Uint8Array(buf));
+          const msg = (TuskDB.mode === 'local') ? 'Imported JSON backup' : 'Imported SQLite DB';
+          document.getElementById('status').textContent = msg + ' · Reload CRM to see changes.';
+          showToast(msg);
+        } catch (e) {
+          console.error(e);
+          document.getElementById('status').textContent = 'Import failed';
+          showToast('Import failed');
+        }
+      };
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TUSK • Settings</title>
+  <link rel="stylesheet" href="../lib/ui.css" />
+  <script defer src="../lib/db.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="inner">
+      <div class="brand"><span class="dot"></span> TUSK-OS</div>
+      <nav class="nav">
+        <a href="start.html">Home</a>
+        <a href="crm.html">CRM</a>
+        <a class="active" href="settings.html">Settings</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="kicker">System</div>
+          <div class="card-title">Settings</div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <div class="field">
+            <label for="company">Company</label>
+            <input class="input" id="company" placeholder="Acme Corp" />
+          </div>
+        </div>
+        <div class="col">
+          <div class="field">
+            <label for="currency">Currency</label>
+            <input class="input" id="currency" placeholder="USD" />
+          </div>
+        </div>
+      </div>
+
+      <div class="toolbar" style="margin-top:8px">
+        <button class="btn primary" id="save">Save</button>
+        <button class="btn" id="reset">Reset</button>
+        <div class="subtle" id="status"></div>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    function showToast(msg, ms=2000){
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(()=>el.classList.remove('show'), ms);
+    }
+
+    function loadForm($company, $currency){
+      const cfg = TuskDB.getSettings();
+      $company.value = cfg.company || '';
+      $currency.value = cfg.currency || 'USD';
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const $company = document.getElementById('company');
+      const $currency = document.getElementById('currency');
+      const $status = document.getElementById('status');
+
+      try { await TuskDB.ready(); } catch(e){ console.error(e); $status.textContent = 'DB init failed'; return; }
+      loadForm($company, $currency);
+      document.getElementById('save').onclick = () => {
+        TuskDB.saveSettings({ company: $company.value.trim(), currency: $currency.value.trim() || 'USD' });
+        $status.textContent = 'Saved';
+        showToast('Settings saved');
+      };
+      document.getElementById('reset').onclick = () => {
+        loadForm($company, $currency);
+        showToast('Reset changes');
+      };
+    });
+  </script>
+</body>
+</html>
