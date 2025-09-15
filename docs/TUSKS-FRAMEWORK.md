@@ -40,8 +40,8 @@ Minimal bootstrapping in a page:
 <script src="../lib/layout.js"></script>
 <script src="../lib/idb.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', async () => {
-    TuskLayout.initLayout({ activeMain: 'crm' });
+  document.addEventListener("DOMContentLoaded", async () => {
+    TuskLayout.initLayout({ activeMain: "crm" });
     await TuskIDB.ready();
     const leads = await TuskIDB.listLeads();
     // render leads...

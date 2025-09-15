@@ -14,6 +14,7 @@ Local‑first, HTML‑native apps you can double‑click and own forever. TUSK�
 - Add a few records and use Export to download JSON/CSV/SQLite backups
 
 Optional: serve over localhost if you prefer a stable origin
+
 - Any static server works. Example: `python3 -m http.server 1234`
 
 ## What’s inside
@@ -26,6 +27,7 @@ Optional: serve over localhost if you prefer a stable origin
 ## TUSKS Framework (HTML‑native pattern)
 
 TUSKS is our opinionated way to build “native HTML file apps”:
+
 - One HTML page per app section; keep JS small and focused
 - IndexedDB is the primary store (see `tusk-os-idb/lib/idb.js`)
 - Shared shell for layout (`lib/layout.js`) and styles (`lib/ui.css`)

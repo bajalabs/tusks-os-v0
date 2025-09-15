@@ -13,12 +13,13 @@ This guide explains how to add or modify pages, use the storage helpers, and tes
 - Navigate using the header (top) and sidebar (left)
 
 Optional: serve locally
+
 - `python3 -m http.server 1234` (then open http://localhost:1234/tusk-os-idb/apps/start.html)
 
 ## Add a new app page
 
-1) Create an HTML file in `tusk-os-idb/apps/` (copy an existing one as a starting point)
-2) Include the shared libs:
+1. Create an HTML file in `tusk-os-idb/apps/` (copy an existing one as a starting point)
+2. Include the shared libs:
 
 ```html
 <link rel="stylesheet" href="../lib/ui.css" />
@@ -26,19 +27,19 @@ Optional: serve locally
 <script src="../lib/idb.js"></script>
 ```
 
-3) Initialize the layout and storage in a small inline script:
+3. Initialize the layout and storage in a small inline script:
 
 ```html
 <script>
-  document.addEventListener('DOMContentLoaded', async () => {
-    TuskLayout.initLayout({ activeMain: 'crm' });
+  document.addEventListener("DOMContentLoaded", async () => {
+    TuskLayout.initLayout({ activeMain: "crm" });
     await TuskIDB.ready();
     // Your app logic here
   });
 </script>
 ```
 
-4) Add page content using the `.content` grid area (cards, lists, forms)
+4. Add page content using the `.content` grid area (cards, lists, forms)
 
 ## CRUD with `TuskIDB`
 
@@ -58,8 +59,8 @@ Optional: serve locally
 To trigger a download:
 
 ```js
-function downloadBlob(blob, filename){
-  const a = document.createElement('a');
+function downloadBlob(blob, filename) {
+  const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = filename;
   a.click();

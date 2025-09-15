@@ -23,6 +23,7 @@ Primary store: IndexedDB. Stores created lazily on upgrade:
 - meta: generic key/value (settings under key `settings`)
 
 IDB helper exposes:
+
 - ready(), get/save settings
 - add/list for each entity
 - counts per store
@@ -46,12 +47,12 @@ Layout is initialized per page:
 
 ```js
 TuskLayout.initLayout({
-  activeMain: 'crm',
+  activeMain: "crm",
   side: [
-    { label: 'Leads', href: 'crm.html' },
-    { label: 'Accounts', href: 'accounts.html' },
+    { label: "Leads", href: "crm.html" },
+    { label: "Accounts", href: "accounts.html" },
     // ...
-  ]
+  ],
 });
 ```
 
