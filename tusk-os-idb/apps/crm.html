@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TUSK • CRM (IDB)</title>
+  <link rel="stylesheet" href="../../tusk-os-static/lib/ui.css" />
+  <script defer src="../lib/idb.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="inner">
+      <div class="brand"><span class="dot"></span> TUSK-OS</div>
+      <nav class="nav">
+        <a href="start.html">Home</a>
+        <a class="active" href="crm.html">CRM</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="kicker">Sales</div>
+          <div class="card-title">Leads (IndexedDB)</div>
+        </div>
+        <div class="card-actions">
+          <button class="btn primary" id="add">+ New Lead</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>ID</th><th>Name</th><th>Email</th><th>Status</th><th>Created</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="leadDialog">
+    <div class="dialog-header">New Lead</div>
+    <div class="dialog-body">
+      <div class="field">
+        <label for="leadName">Name</label>
+        <input class="input" id="leadName" placeholder="Jane Doe" />
+      </div>
+      <div class="field">
+        <label for="leadEmail">Email (optional)</label>
+        <input class="input" id="leadEmail" placeholder="jane@example.com" />
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn" id="cancelLead">Cancel</button>
+      <button class="btn primary" id="createLead">Create</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    function showToast(msg, ms=2000){
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(()=>el.classList.remove('show'), ms);
+    }
+
+    async function load(){
+      await TuskIDB.ready();
+      const rows = await TuskIDB.listLeads(500);
+      const tbody = document.getElementById('rows');
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="5" class="empty">No leads yet. Click “New Lead”.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = rows.map(r =>
+        `<tr><td>${r.id||''}</td><td>${r.name}</td><td>${r.email||''}</td><td>${r.status||'new'}</td><td>${r.created_at||''}</td></tr>`
+      ).join('');
+    }
+
+    function openDialog(){
+      const d = document.getElementById('leadDialog');
+      document.getElementById('leadName').value = '';
+      document.getElementById('leadEmail').value = '';
+      if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open','');
+      setTimeout(()=> document.getElementById('leadName').focus(), 0);
+    }
+    function closeDialog(){
+      const d = document.getElementById('leadDialog');
+      if (typeof d.close === 'function') d.close(); else d.removeAttribute('open');
+    }
+
+    async function createLead(){
+      const name = document.getElementById('leadName').value.trim();
+      const email = document.getElementById('leadEmail').value.trim() || null;
+      if (!name) { showToast('Name is required'); return; }
+      await TuskIDB.addLead({ name, email });
+      closeDialog();
+      showToast('Lead created');
+      load();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('add').onclick = openDialog;
+      document.getElementById('cancelLead').onclick = closeDialog;
+      document.getElementById('createLead').onclick = createLead;
+      document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeDialog(); });
+      load();
+    });
+  </script>
+</body>
+</html>
