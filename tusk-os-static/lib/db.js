@@ -46,12 +46,54 @@ function localSave(obj) {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(obj));
 }
 
+async function migrateLocalToSQLite() {
+  // Only run when sqlite mode is active
+  await openDB();
+  if (_mode !== 'sqlite') throw new Error('SQLite not available');
+  const store = localLoad();
+  if (!store || !Array.isArray(store.leads) || store.leads.length === 0) return { ok: true, migrated: 0 };
+  // Ensure schema
+  bootstrapIfEmpty(_db);
+  // Insert in a txn — avoid explicit IDs to prevent PK conflicts
+  _db.exec('BEGIN IMMEDIATE;');
+  try {
+    const ins = _db.prepare("INSERT INTO leads(name, email, status, created_at) VALUES(?, ?, ?, ?)");
+    for (const r of store.leads) {
+      ins.bind([r.name, r.email || null, r.status || 'new', r.created_at || null]);
+      ins.step();
+      ins.reset();
+    }
+    ins.free();
+    _db.exec('COMMIT;');
+  } catch (e) {
+    _db.exec('ROLLBACK;');
+    throw e;
+  }
+  persist();
+  // Clear local fallback now that data is migrated
+  localSave(localDefault());
+  return { ok: true, migrated: store.leads.length };
+}
+
+function countLocalLeads(){
+  const store = localLoad();
+  return Array.isArray(store.leads) ? store.leads.length : 0;
+}
+
 async function loadSQL() {
   if (_SQL) return _SQL;
   // try local first
   let useBase = SQL_JS_LOCAL;
   if (!window.initSqlJs) {
     try {
+      // Try to load embedded wasm base64 (optional)
+      await new Promise((resolve) => {
+        const s = document.createElement("script");
+        s.src = SQL_JS_LOCAL + "sql-wasm-b64.js";
+        s.onload = resolve;
+        s.onerror = resolve; // optional, ignore failure
+        document.head.appendChild(s);
+      });
       await new Promise((resolve, reject) => {
         const s = document.createElement("script");
         s.src = SQL_JS_LOCAL + "sql-wasm.js";
@@ -71,7 +113,16 @@ async function loadSQL() {
       });
     }
   }
-  _SQL = await window.initSqlJs({ locateFile: (file) => useBase + file });
+  const options = { locateFile: (file) => useBase + file };
+  try {
+    if (window.SQL_WASM_BASE64) {
+      const b64 = String(window.SQL_WASM_BASE64).replace(/\s+/g, "");
+      const bytes = bytesFromB64(b64);
+      // emscripten supports Uint8Array or ArrayBuffer for wasmBinary
+      options.wasmBinary = bytes;
+    }
+  } catch {}
+  _SQL = await window.initSqlJs(options);
   return _SQL;
 }
 
@@ -232,4 +283,6 @@ window.TuskDB = {
   getSettings,
   saveSettings,
   get mode(){ return _mode; },
+  migrateLocalToSQLite,
+  countLocalLeads,
 };

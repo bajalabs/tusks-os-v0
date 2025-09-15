@@ -62,6 +62,12 @@
       <div class="banner">
         This workspace runs fully in your browser using WebAssembly (sql.js). Data is saved to your browser storage. Use Export to back up to a real SQLite file.
       </div>
+      <div id="migrateRow" class="banner" style="display:none; align-items:center; justify-content:space-between; gap:12px;">
+        <div>
+          Local fallback data detected. You can migrate it into the SQLite database so CRM sees it everywhere.
+        </div>
+        <button id="migrateBtn" class="btn">Migrate now</button>
+      </div>
     </div>
   </main>
 
@@ -95,6 +101,33 @@
         dbTitle.textContent = 'Local-first SQLite';
         importInput.accept = '.sqlite,application/octet-stream';
         importLabel.textContent = 'Import .sqlite';
+      }
+
+      // Offer migration if we're in SQLite mode and have local leads
+      try {
+        const migrateRow = document.getElementById('migrateRow');
+        const migrateBtn = document.getElementById('migrateBtn');
+        const localCount = TuskDB.countLocalLeads();
+        if (mode === 'sqlite' && localCount > 0) {
+          migrateRow.style.display = 'flex';
+          migrateBtn.onclick = async () => {
+            migrateBtn.disabled = true;
+            try {
+              const res = await TuskDB.migrateLocalToSQLite();
+              document.getElementById('status').textContent = `Migrated ${res.migrated} local records to SQLite.`;
+              showToast(`Migrated ${res.migrated} records`);
+              migrateRow.style.display = 'none';
+            } catch (e) {
+              console.error(e);
+              document.getElementById('status').textContent = 'Migration failed';
+              showToast('Migration failed');
+            } finally {
+              migrateBtn.disabled = false;
+            }
+          };
+        }
+      } catch (e) {
+        console.warn('Migration banner check failed', e);
       }
 
       document.getElementById('export').onclick = async () => {

@@ -22,3 +22,9 @@ If the browser blocks WASM over file:// or the sql.js CDN can’t load, the app 
 - Import accepts this JSON backup to restore your data.
 
 Tip: when you later run with SQLite enabled (e.g., serve over http or bundle sql.js locally), you can import/export as a real tusk.sqlite again.
+
+MIGRATING FROM LOCAL STORAGE TO SQLITE
+--------------------------------------
+If you previously used the fallback local storage mode and later run with SQLite available (no errors, “Local-first SQLite” shown), the Start page will show a “Migrate now” banner if it detects local fallback records.
+- Click “Migrate now” to copy your local records into the SQLite database and clear the fallback store.
+- After migration, CRM will show your migrated records.

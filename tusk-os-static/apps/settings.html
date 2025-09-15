@@ -61,22 +61,26 @@
       setTimeout(()=>el.classList.remove('show'), ms);
     }
 
-    function loadForm(){
+    function loadForm($company, $currency){
       const cfg = TuskDB.getSettings();
-      company.value = cfg.company || '';
-      currency.value = cfg.currency || 'USD';
+      $company.value = cfg.company || '';
+      $currency.value = cfg.currency || 'USD';
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
-      try { await TuskDB.ready(); } catch(e){ console.error(e); document.getElementById('status').textContent = 'DB init failed'; return; }
-      loadForm();
+      const $company = document.getElementById('company');
+      const $currency = document.getElementById('currency');
+      const $status = document.getElementById('status');
+
+      try { await TuskDB.ready(); } catch(e){ console.error(e); $status.textContent = 'DB init failed'; return; }
+      loadForm($company, $currency);
       document.getElementById('save').onclick = () => {
-        TuskDB.saveSettings({ company: company.value.trim(), currency: currency.value.trim() || 'USD' });
-        document.getElementById('status').textContent = 'Saved';
+        TuskDB.saveSettings({ company: $company.value.trim(), currency: $currency.value.trim() || 'USD' });
+        $status.textContent = 'Saved';
         showToast('Settings saved');
       };
       document.getElementById('reset').onclick = () => {
-        loadForm();
+        loadForm($company, $currency);
         showToast('Reset changes');
       };
     });
