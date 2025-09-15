@@ -7,9 +7,11 @@ TUSK-OS v0 is a pure-static, local-first CRM that runs entirely in your browser.
 - Data stays local; export anytime to JSON, CSV, or SQLite
 
 ## Demo
+
 - Open `tusk-os-idb/apps/start.html` directly, or serve the repo with any static server
 
 ## Features
+
 - Entities: Leads, Accounts, Contacts, Deals, Activities
 - Settings for workspace (company, currency)
 - Export:
@@ -18,11 +20,13 @@ TUSK-OS v0 is a pure-static, local-first CRM that runs entirely in your browser.
   - SQLite: in-memory build via sql.js, downloadable `.sqlite`
 
 ## Tech
+
 - IndexedDB (native browser storage)
 - sql.js (WASM) for SQLite exports only; assets vendored under `tusk-os-idb/lib/sqljs/`
 - No frameworks; simple HTML/CSS/JS
 
 ## Repo structure
+
 - `tusk-os-idb/` – current implementation (apps + lib)
 - `BackPack-v0/` – plans and research
   - `Research/Database-and-Localhost-Journey.md` – deep dive into our storage journey
@@ -31,10 +35,13 @@ TUSK-OS v0 is a pure-static, local-first CRM that runs entirely in your browser.
 - `LICENSE`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md` – open-source essentials
 
 ## Contributing
+
 See `CONTRIBUTING.md`. By participating, you agree to the `CODE_OF_CONDUCT.md`.
 
 ## Security
+
 See `SECURITY.md` to report vulnerabilities.
 
 ## License
+
 MIT © 2025 BajaLabs
