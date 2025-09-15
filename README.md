@@ -27,6 +27,7 @@ TUSK-OS v0 is a pure-static, local-first CRM that runs entirely in your browser.
 - `BackPack-v0/` – plans and research
   - `Research/Database-and-Localhost-Journey.md` – deep dive into our storage journey
 - `.github/` – issue and PR templates
+- `PRIVATE_REPO_SETUP.md` – how to pair with a private companion repo for data/env
 - `LICENSE`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md` – open-source essentials
 
 ## Contributing
