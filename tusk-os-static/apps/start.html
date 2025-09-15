@@ -49,11 +49,11 @@
       <div class="card-header">
         <div>
           <div class="kicker">Database</div>
-          <div class="card-title">Local-first SQLite</div>
+          <div class="card-title" id="dbTitle">Local-first SQLite</div>
         </div>
         <div class="card-actions">
-          <button class="btn secondary" id="export">Export .sqlite</button>
-          <label class="btn" for="import">Import .sqlite</label>
+          <button class="btn secondary" id="export">Export</button>
+          <label class="btn" for="import" id="importLabel">Import</label>
           <input id="import" type="file" accept=".sqlite,application/octet-stream" style="display:none" />
         </div>
       </div>
@@ -76,29 +76,40 @@
     }
 
     (async () => {
-      try {
-        await TuskDB.ready();
-      } catch (err) {
-        console.error(err);
-        document.getElementById('status').textContent = 'Failed to initialize database.';
-        return;
-      }
+      try { await TuskDB.ready(); } catch (err) { console.error(err); }
 
       const cfg = TuskDB.getSettings();
       document.getElementById('company').textContent = cfg.company || '—';
       document.getElementById('currency').textContent = cfg.currency || '—';
 
+      // Adjust UI by DB mode
+      const mode = TuskDB.mode;
+      const dbTitle = document.getElementById('dbTitle');
+      const importInput = document.getElementById('import');
+      const importLabel = document.getElementById('importLabel');
+      if (mode === 'local') {
+        dbTitle.textContent = 'Local storage (fallback)';
+        importInput.accept = 'application/json,.json';
+        importLabel.textContent = 'Import .json';
+      } else {
+        dbTitle.textContent = 'Local-first SQLite';
+        importInput.accept = '.sqlite,application/octet-stream';
+        importLabel.textContent = 'Import .sqlite';
+      }
+
       document.getElementById('export').onclick = async () => {
         try {
           const bytes = await TuskDB.export();
-          const blob = new Blob([bytes], { type: 'application/x-sqlite3' });
+          const isLocal = TuskDB.mode === 'local';
+          const blob = new Blob([bytes], { type: isLocal ? 'application/json' : 'application/x-sqlite3' });
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blob);
-          a.download = 'tusk.sqlite';
+          a.download = isLocal ? 'tusk-local-backup.json' : 'tusk.sqlite';
           a.click();
           URL.revokeObjectURL(a.href);
-          document.getElementById('status').textContent = "Exported tusk.sqlite";
-          showToast('Exported tusk.sqlite');
+          const msg = isLocal ? 'Exported tusk-local-backup.json' : 'Exported tusk.sqlite';
+          document.getElementById('status').textContent = msg;
+          showToast(msg);
         } catch (e) {
           console.error(e);
           document.getElementById('status').textContent = 'Export failed';
@@ -112,8 +123,9 @@
         try {
           const buf = await file.arrayBuffer();
           await TuskDB.import(new Uint8Array(buf));
-          document.getElementById('status').textContent = "Imported DB · Reload CRM to see changes.";
-          showToast('Imported database');
+          const msg = (TuskDB.mode === 'local') ? 'Imported JSON backup' : 'Imported SQLite DB';
+          document.getElementById('status').textContent = msg + ' · Reload CRM to see changes.';
+          showToast(msg);
         } catch (e) {
           console.error(e);
           document.getElementById('status').textContent = 'Import failed';
