@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>TUSK • CRM</title>
+  <script defer src="../lib/db.js"></script>
+  <style>
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 6px; }
+    button { margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <h2>Leads</h2>
+  <button id="add">+ New Lead</button>
+  <table>
+    <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Status</th><th>Created</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <p><a href="start.html">← Back</a></p>
+
+  <script>
+    async function load() {
+      await TuskDB.ready();
+      const rows = await TuskDB.select(
+        "SELECT id, name, email, status, created_at FROM leads ORDER BY created_at DESC LIMIT 200"
+      );
+      const tbody = document.getElementById('rows');
+      tbody.innerHTML = rows.map(r =>
+        `<tr><td>${r.id}</td><td>${r.name}</td><td>${r.email || ''}</td><td>${r.status}</td><td>${r.created_at}</td></tr>`
+      ).join("");
+    }
+
+    async function addLead() {
+      const name = prompt("Lead name?");
+      if (!name) return;
+      const email = prompt("Email?") || null;
+      await TuskDB.exec([
+        ["INSERT INTO leads(name, email, status, created_at) VALUES(?, ?, 'new', datetime('now'))", [name, email]]
+      ]);
+      load();
+    }
+
+    document.getElementById('add').onclick = addLead;
+    load();
+  </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>TUSK • Settings</title>
+  <script defer src="../lib/db.js"></script>
+</head>
+<body>
+  <h2>System Settings</h2>
+  <p><label>Company <input id="company" /></label></p>
+  <p><label>Currency <input id="currency" /></label></p>
+  <button id="save">Save</button>
+  <p><a href="start.html">← Back</a></p>
+
+  <script>
+    (async () => {
+      await TuskDB.ready();
+      const cfg = TuskDB.getSettings();
+      company.value = cfg.company || "";
+      currency.value = cfg.currency || "USD";
+
+      document.getElementById('save').onclick = () => {
+        TuskDB.saveSettings({ company: company.value, currency: currency.value });
+        alert("Saved.");
+      };
+    })();
+  </script>
+</body>
+</html>
