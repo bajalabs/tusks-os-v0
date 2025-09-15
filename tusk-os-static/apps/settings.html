@@ -67,7 +67,7 @@
       currency.value = cfg.currency || 'USD';
     }
 
-    (async () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       try { await TuskDB.ready(); } catch(e){ console.error(e); document.getElementById('status').textContent = 'DB init failed'; return; }
       loadForm();
       document.getElementById('save').onclick = () => {
@@ -79,7 +79,7 @@
         loadForm();
         showToast('Reset changes');
       };
-    })();
+    });
   </script>
 </body>
 </html>

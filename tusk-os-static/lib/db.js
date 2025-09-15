@@ -9,6 +9,7 @@
  * Settings helpers: TuskDB.getSettings(), TuskDB.saveSettings(obj)
  */
 const SQL_JS_CDN = "https://cdn.jsdelivr.net/npm/sql.js@1.10.2/dist/";
+const SQL_JS_LOCAL = "../lib/sqljs/"; // place sql-wasm.js and sql-wasm.wasm here for offline
 const DB_KEY = "tusk.sqlite.v1"; // sqlite (base64 image)
 const LOCAL_KEY = "tusk.localdb.v1"; // local-only JSON fallback
 const SETTINGS_KEY = "tusk.settings.v1";
@@ -47,18 +48,30 @@ function localSave(obj) {
 
 async function loadSQL() {
   if (_SQL) return _SQL;
+  // try local first
+  let useBase = SQL_JS_LOCAL;
   if (!window.initSqlJs) {
-    await new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = SQL_JS_CDN + "sql-wasm.js";
-      s.onload = resolve;
-      s.onerror = () => reject(new Error("Failed to load sql.js"));
-      document.head.appendChild(s);
-    });
+    try {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = SQL_JS_LOCAL + "sql-wasm.js";
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    } catch {
+      // fallback to CDN
+      useBase = SQL_JS_CDN;
+      await new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = SQL_JS_CDN + "sql-wasm.js";
+        s.onload = resolve;
+        s.onerror = () => reject(new Error("Failed to load sql.js"));
+        document.head.appendChild(s);
+      });
+    }
   }
-  _SQL = await window.initSqlJs({
-    locateFile: (file) => SQL_JS_CDN + file,
-  });
+  _SQL = await window.initSqlJs({ locateFile: (file) => useBase + file });
   return _SQL;
 }
 

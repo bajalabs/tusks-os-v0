@@ -5,7 +5,13 @@ TUSK-OS Static v0 (no server)
 4) Optional: Export DB to a real tusk.sqlite and Import later.
 
 Notes:
-- This runs offline except it loads sql.js from a CDN. If you need fully offline, download sql.js locally and update lib/db.js `locateFile`.
+- This runs offline except it loads sql.js from a CDN by default. For fully offline SQLite:
+	1) Create folder: tusk-os-static/lib/sqljs/
+	2) Download from https://github.com/sql-js/sql.js/releases or jsDelivr the files:
+		 - sql-wasm.js
+		 - sql-wasm.wasm
+	3) Put both files in tusk-os-static/lib/sqljs/
+	4) Re-open apps/start.html (file://). The app will prefer local assets.
 - Browsers keep storage per browser/profile. Clearing site data clears the DB.
 
 FALLBACK MODE (no SQLite available)

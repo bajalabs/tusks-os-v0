@@ -75,7 +75,7 @@
       setTimeout(() => el.classList.remove('show'), ms);
     }
 
-    (async () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       try { await TuskDB.ready(); } catch (err) { console.error(err); }
 
       const cfg = TuskDB.getSettings();
@@ -132,7 +132,7 @@
           showToast('Import failed');
         }
       };
-    })();
+    });
   </script>
 </body>
 </html>
