@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TUSK • Deals (IDB)</title>
+  <link rel="stylesheet" href="../../tusk-os-static/lib/ui.css" />
+  <script defer src="../lib/idb.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="inner">
+      <div class="brand"><span class="dot"></span> TUSK-OS</div>
+      <nav class="nav">
+        <a href="start.html">Home</a>
+        <a href="crm.html">Leads</a>
+        <a href="accounts.html">Accounts</a>
+        <a href="contacts.html">Contacts</a>
+        <a class="active" href="deals.html">Deals</a>
+        <a href="activities.html">Activities</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="kicker">Pipeline</div>
+          <div class="card-title">Deals</div>
+        </div>
+        <div class="card-actions">
+          <button class="btn primary" id="add">+ New Deal</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>ID</th><th>Name</th><th>Amount</th><th>Stage</th><th>Owner</th><th>Account</th><th>Close Date</th><th>Created</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="dealDialog">
+    <div class="dialog-header">New Deal</div>
+    <div class="dialog-body">
+      <div class="field">
+        <label for="dName">Name</label>
+        <input class="input" id="dName" placeholder="Enterprise Renewal" />
+      </div>
+      <div class="field">
+        <label for="dAmount">Amount</label>
+        <input class="input" id="dAmount" placeholder="50000" />
+      </div>
+      <div class="field">
+        <label for="dStage">Stage</label>
+        <input class="input" id="dStage" placeholder="New" />
+      </div>
+      <div class="field">
+        <label for="dOwner">Owner</label>
+        <input class="input" id="dOwner" placeholder="you@company.com" />
+      </div>
+      <div class="field">
+        <label for="dAccount">Account ID</label>
+        <input class="input" id="dAccount" placeholder="1" />
+      </div>
+      <div class="field">
+        <label for="dCloseDate">Close Date</label>
+        <input class="input" id="dCloseDate" placeholder="2025-12-31" />
+      </div>
+      <div class="field">
+        <label for="dNotes">Notes</label>
+        <input class="input" id="dNotes" placeholder="Short note" />
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn" id="cancelDeal">Cancel</button>
+      <button class="btn primary" id="createDeal">Create</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    function showToast(msg, ms=2000){
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(()=>el.classList.remove('show'), ms);
+    }
+
+    async function load(){
+      await TuskIDB.ready();
+      const rows = await TuskIDB.listDeals(500);
+      const tbody = document.getElementById('rows');
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="empty">No deals yet. Click “New Deal”.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = rows.map(r =>
+        `<tr><td>${r.id||''}</td><td>${r.name||''}</td><td>${r.amount||''}</td><td>${r.stage||'New'}</td><td>${r.owner||''}</td><td>${r.account_id||''}</td><td>${r.close_date||''}</td><td>${r.created_at||''}</td></tr>`
+      ).join('');
+    }
+
+    function openDialog(){
+      const d = document.getElementById('dealDialog');
+      ['dName','dAmount','dStage','dOwner','dAccount','dCloseDate','dNotes'].forEach(id => document.getElementById(id).value='');
+      if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open','');
+      setTimeout(()=> document.getElementById('dName').focus(), 0);
+    }
+    function closeDialog(){
+      const d = document.getElementById('dealDialog');
+      if (typeof d.close === 'function') d.close(); else d.removeAttribute('open');
+    }
+
+    async function createDeal(){
+      const name = document.getElementById('dName').value.trim();
+      const amount = document.getElementById('dAmount').value.trim();
+      const stage = document.getElementById('dStage').value.trim() || 'New';
+      const owner = document.getElementById('dOwner').value.trim() || null;
+      const account_id = Number(document.getElementById('dAccount').value) || null;
+      const close_date = document.getElementById('dCloseDate').value.trim() || null;
+      const notes = document.getElementById('dNotes').value.trim() || null;
+      if (!name) { showToast('Name is required'); return; }
+      await TuskIDB.addDeal({ name, amount, stage, owner, account_id, close_date, notes });
+      closeDialog();
+      showToast('Deal created');
+      load();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('add').onclick = openDialog;
+      document.getElementById('cancelDeal').onclick = closeDialog;
+      document.getElementById('createDeal').onclick = createDeal;
+      document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeDialog(); });
+      load();
+    });
+  </script>
+</body>
+</html>

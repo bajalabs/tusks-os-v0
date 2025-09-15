@@ -14,7 +14,11 @@
       <div class="brand"><span class="dot"></span> TUSK-OS</div>
       <nav class="nav">
         <a class="active" href="start.html">Home</a>
-        <a href="crm.html">CRM</a>
+        <a href="crm.html">Leads</a>
+        <a href="accounts.html">Accounts</a>
+        <a href="contacts.html">Contacts</a>
+        <a href="deals.html">Deals</a>
+        <a href="activities.html">Activities</a>
         <a href="settings.html">Settings</a>
       </nav>
     </div>
@@ -48,6 +52,13 @@
             <div id="currency" style="font-weight:600; margin-top:4px;">—</div>
           </div>
         </div>
+        <div class="col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Data</div></div>
+            <div class="subtle">Totals</div>
+            <div id="totals" style="font-weight:600; margin-top:4px;">—</div>
+          </div>
+        </div>
       </div>
       <div id="status" class="subtle"></div>
       <div class="spacer"></div>
@@ -72,6 +83,18 @@
       const cfg = await TuskIDB.getSettings();
       document.getElementById('company').textContent = cfg.company || '—';
       document.getElementById('currency').textContent = cfg.currency || '—';
+
+      // counts
+      try {
+        const [leads, accounts, contacts, deals, activities] = await Promise.all([
+          TuskIDB.count('leads'),
+          TuskIDB.count('accounts'),
+          TuskIDB.count('contacts'),
+          TuskIDB.count('deals'),
+          TuskIDB.count('activities'),
+        ]);
+        document.getElementById('totals').textContent = `${leads} leads • ${accounts} accounts • ${contacts} contacts • ${deals} deals • ${activities} activities`;
+      } catch (e) { console.warn(e); }
 
       document.getElementById('exportJSON').onclick = async () => {
         const blob = await TuskIDB.exportJSON();

@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TUSK • Activities (IDB)</title>
+  <link rel="stylesheet" href="../../tusk-os-static/lib/ui.css" />
+  <script defer src="../lib/idb.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="inner">
+      <div class="brand"><span class="dot"></span> TUSK-OS</div>
+      <nav class="nav">
+        <a href="start.html">Home</a>
+        <a href="crm.html">Leads</a>
+        <a href="accounts.html">Accounts</a>
+        <a href="contacts.html">Contacts</a>
+        <a href="deals.html">Deals</a>
+        <a class="active" href="activities.html">Activities</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="kicker">Timeline</div>
+          <div class="card-title">Activities</div>
+        </div>
+        <div class="card-actions">
+          <button class="btn primary" id="add">+ New Activity</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>ID</th><th>Type</th><th>Subject</th><th>Date</th><th>Related</th><th>Owner</th><th>Created</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="actDialog">
+    <div class="dialog-header">New Activity</div>
+    <div class="dialog-body">
+      <div class="field">
+        <label for="aType">Type</label>
+        <input class="input" id="aType" placeholder="call|email|note|task" />
+      </div>
+      <div class="field">
+        <label for="aSubject">Subject</label>
+        <input class="input" id="aSubject" placeholder="Follow up" />
+      </div>
+      <div class="field">
+        <label for="aDate">Date</label>
+        <input class="input" id="aDate" placeholder="2025-09-14" />
+      </div>
+      <div class="field">
+        <label for="aRelated">Related (kind:id)</label>
+        <input class="input" id="aRelated" placeholder="lead:1" />
+      </div>
+      <div class="field">
+        <label for="aOwner">Owner</label>
+        <input class="input" id="aOwner" placeholder="you@company.com" />
+      </div>
+      <div class="field">
+        <label for="aNotes">Notes</label>
+        <input class="input" id="aNotes" placeholder="Short note" />
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn" id="cancelAct">Cancel</button>
+      <button class="btn primary" id="createAct">Create</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    function showToast(msg, ms=2000){
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(()=>el.classList.remove('show'), ms);
+    }
+
+    async function load(){
+      await TuskIDB.ready();
+      const rows = await TuskIDB.listActivities(500);
+      const tbody = document.getElementById('rows');
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty">No activities yet. Click “New Activity”.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = rows.map(r => {
+        const rel = r.related && r.related.kind && r.related.id ? `${r.related.kind}:${r.related.id}` : '';
+        return `<tr><td>${r.id||''}</td><td>${r.type||''}</td><td>${r.subject||''}</td><td>${r.date||''}</td><td>${rel}</td><td>${r.owner||''}</td><td>${r.created_at||''}</td></tr>`;
+      }).join('');
+    }
+
+    function openDialog(){
+      const d = document.getElementById('actDialog');
+      ['aType','aSubject','aDate','aRelated','aOwner','aNotes'].forEach(id => document.getElementById(id).value='');
+      if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open','');
+      setTimeout(()=> document.getElementById('aType').focus(), 0);
+    }
+    function closeDialog(){
+      const d = document.getElementById('actDialog');
+      if (typeof d.close === 'function') d.close(); else d.removeAttribute('open');
+    }
+
+    async function createAct(){
+      const type = document.getElementById('aType').value.trim();
+      const subject = document.getElementById('aSubject').value.trim() || null;
+      const date = document.getElementById('aDate').value.trim() || null;
+      const relatedRaw = document.getElementById('aRelated').value.trim();
+      let related = null;
+      if (relatedRaw) {
+        const m = relatedRaw.split(':');
+        if (m.length === 2) related = { kind: m[0], id: Number(m[1])||null };
+      }
+      const owner = document.getElementById('aOwner').value.trim() || null;
+      const notes = document.getElementById('aNotes').value.trim() || null;
+      if (!type) { showToast('Type is required'); return; }
+      await TuskIDB.addActivity({ type, subject, date, related, owner, notes });
+      closeDialog();
+      showToast('Activity created');
+      load();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('add').onclick = openDialog;
+      document.getElementById('cancelAct').onclick = closeDialog;
+      document.getElementById('createAct').onclick = createAct;
+      document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeDialog(); });
+      load();
+    });
+  </script>
+</body>
+</html>

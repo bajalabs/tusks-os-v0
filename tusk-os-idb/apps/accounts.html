@@ -1,0 +1,138 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TUSK • Accounts (IDB)</title>
+  <link rel="stylesheet" href="../../tusk-os-static/lib/ui.css" />
+  <script defer src="../lib/idb.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="inner">
+      <div class="brand"><span class="dot"></span> TUSK-OS</div>
+      <nav class="nav">
+        <a href="start.html">Home</a>
+        <a href="crm.html">Leads</a>
+        <a class="active" href="accounts.html">Accounts</a>
+        <a href="contacts.html">Contacts</a>
+        <a href="deals.html">Deals</a>
+        <a href="activities.html">Activities</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="kicker">Organizations</div>
+          <div class="card-title">Accounts</div>
+        </div>
+        <div class="card-actions">
+          <button class="btn primary" id="add">+ New Account</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr><th>ID</th><th>Name</th><th>Domain</th><th>Phone</th><th>Owner</th><th>Created</th></tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="accDialog">
+    <div class="dialog-header">New Account</div>
+    <div class="dialog-body">
+      <div class="field">
+        <label for="accName">Name</label>
+        <input class="input" id="accName" placeholder="Acme Inc." />
+      </div>
+      <div class="field">
+        <label for="accDomain">Domain</label>
+        <input class="input" id="accDomain" placeholder="acme.com" />
+      </div>
+      <div class="field">
+        <label for="accPhone">Phone</label>
+        <input class="input" id="accPhone" placeholder="+1 555-0100" />
+      </div>
+      <div class="field">
+        <label for="accOwner">Owner</label>
+        <input class="input" id="accOwner" placeholder="you@company.com" />
+      </div>
+      <div class="field">
+        <label for="accNotes">Notes</label>
+        <input class="input" id="accNotes" placeholder="Short note" />
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button class="btn" id="cancelAcc">Cancel</button>
+      <button class="btn primary" id="createAcc">Create</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    function showToast(msg, ms=2000){
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(()=>el.classList.remove('show'), ms);
+    }
+
+    async function load(){
+      await TuskIDB.ready();
+      const rows = await TuskIDB.listAccounts(500);
+      const tbody = document.getElementById('rows');
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">No accounts yet. Click “New Account”.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = rows.map(r =>
+        `<tr><td>${r.id||''}</td><td>${r.name||''}</td><td>${r.domain||''}</td><td>${r.phone||''}</td><td>${r.owner||''}</td><td>${r.created_at||''}</td></tr>`
+      ).join('');
+    }
+
+    function openDialog(){
+      const d = document.getElementById('accDialog');
+      document.getElementById('accName').value = '';
+      document.getElementById('accDomain').value = '';
+      document.getElementById('accPhone').value = '';
+      document.getElementById('accOwner').value = '';
+      document.getElementById('accNotes').value = '';
+      if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open','');
+      setTimeout(()=> document.getElementById('accName').focus(), 0);
+    }
+    function closeDialog(){
+      const d = document.getElementById('accDialog');
+      if (typeof d.close === 'function') d.close(); else d.removeAttribute('open');
+    }
+
+    async function createAcc(){
+      const name = document.getElementById('accName').value.trim();
+      const domain = document.getElementById('accDomain').value.trim() || null;
+      const phone = document.getElementById('accPhone').value.trim() || null;
+      const owner = document.getElementById('accOwner').value.trim() || null;
+      const notes = document.getElementById('accNotes').value.trim() || null;
+      if (!name) { showToast('Name is required'); return; }
+      await TuskIDB.addAccount({ name, domain, phone, owner, notes });
+      closeDialog();
+      showToast('Account created');
+      load();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('add').onclick = openDialog;
+      document.getElementById('cancelAcc').onclick = closeDialog;
+      document.getElementById('createAcc').onclick = createAcc;
+      document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeDialog(); });
+      load();
+    });
+  </script>
+</body>
+</html>
