@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+remote_name="$1"
+
+# Only guard public pushes (origin)
+if [[ "$remote_name" == "origin" ]]; then
+  if git diff --cached --name-only | grep -E '^\.vscode/tasks\.json|^private/|^backups/|^data/|\.env(\..*)?$' >/dev/null; then
+    echo "[guard] Refusing to push potentially private files to public remote 'origin'."
+    echo "Move these files to a private branch or private remote."
+    exit 1
+  fi
+fi
+exit 0

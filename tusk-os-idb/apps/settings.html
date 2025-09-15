@@ -1,80 +1,76 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TUSK • Settings (IDB)</title>
-  <link rel="stylesheet" href="../lib/ui.css" />
-  <script defer src="../lib/idb.js"></script>
-</head>
-<body>
-  <header class="app-header">
-    <div class="inner">
-      <div class="brand"><span class="dot"></span> TUSK-OS</div>
-      <nav class="nav">
-        <a href="start.html">Home</a>
-        <a href="crm.html">CRM</a>
-        <a class="active" href="settings.html">Settings</a>
-      </nav>
-    </div>
-  </header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TUSK • Settings (IDB)</title>
+    <link rel="stylesheet" href="../lib/ui.css" />
+    <script defer src="../lib/idb.js"></script>
+    <script defer src="../lib/layout.js"></script>
+  </head>
+  <body>
+    <header class="app-header"></header>
 
-  <main class="container">
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="kicker">Workspace</div>
-          <div class="card-title">Settings (IndexedDB)</div>
+    <main class="container">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="kicker">Workspace</div>
+            <div class="card-title">Settings (IndexedDB)</div>
+          </div>
         </div>
+        <div class="field">
+          <label for="company">Company Name</label>
+          <input class="input" id="company" placeholder="Acme Inc." />
+        </div>
+        <div class="field">
+          <label for="currency">Default Currency</label>
+          <input class="input" id="currency" placeholder="USD" />
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="save">Save Settings</button>
+          <button class="btn" id="reset">Reset</button>
+        </div>
+        <div id="status" class="subtle"></div>
       </div>
-      <div class="field">
-        <label for="company">Company Name</label>
-        <input class="input" id="company" placeholder="Acme Inc." />
-      </div>
-      <div class="field">
-        <label for="currency">Default Currency</label>
-        <input class="input" id="currency" placeholder="USD" />
-      </div>
-      <div class="actions">
-        <button class="btn primary" id="save">Save Settings</button>
-        <button class="btn" id="reset">Reset</button>
-      </div>
-      <div id="status" class="subtle"></div>
-    </div>
-  </main>
+    </main>
 
-  <div id="toast" class="toast"></div>
+    <div id="toast" class="toast"></div>
 
-  <script>
-    function showToast(msg, ms=2000){
-      const el = document.getElementById('toast');
-      el.textContent = msg;
-      el.classList.add('show');
-      setTimeout(()=>el.classList.remove('show'), ms);
-    }
+    <script>
+      function showToast(msg, ms = 2000) {
+        const el = document.getElementById("toast");
+        el.textContent = msg;
+        el.classList.add("show");
+        setTimeout(() => el.classList.remove("show"), ms);
+      }
 
-    window.addEventListener('DOMContentLoaded', async () => {
-      await TuskIDB.ready();
-      const cfg = await TuskIDB.getSettings();
-      const companyInput = document.getElementById('company');
-      const currencyInput = document.getElementById('currency');
-      companyInput.value = cfg.company || '';
-      currencyInput.value = cfg.currency || '';
+      window.addEventListener("DOMContentLoaded", async () => {
+        TuskLayout.initLayout({ activeMain: "settings" });
+        await TuskIDB.ready();
+        const cfg = await TuskIDB.getSettings();
+        const companyInput = document.getElementById("company");
+        const currencyInput = document.getElementById("currency");
+        companyInput.value = cfg.company || "";
+        currencyInput.value = cfg.currency || "";
 
-      document.getElementById('save').onclick = async () => {
-        const obj = { company: companyInput.value.trim(), currency: currencyInput.value.trim() };
-        await TuskIDB.saveSettings(obj);
-        document.getElementById('status').textContent = 'Saved.';
-        showToast('Settings saved');
-      };
-      document.getElementById('reset').onclick = async () => {
-        companyInput.value = '';
-        currencyInput.value = '';
-        await TuskIDB.saveSettings({});
-        document.getElementById('status').textContent = 'Reset.';
-        showToast('Settings reset');
-      };
-    });
-  </script>
-</body>
+        document.getElementById("save").onclick = async () => {
+          const obj = {
+            company: companyInput.value.trim(),
+            currency: currencyInput.value.trim(),
+          };
+          await TuskIDB.saveSettings(obj);
+          document.getElementById("status").textContent = "Saved.";
+          showToast("Settings saved");
+        };
+        document.getElementById("reset").onclick = async () => {
+          companyInput.value = "";
+          currencyInput.value = "";
+          await TuskIDB.saveSettings({});
+          document.getElementById("status").textContent = "Reset.";
+          showToast("Settings reset");
+        };
+      });
+    </script>
+  </body>
 </html>

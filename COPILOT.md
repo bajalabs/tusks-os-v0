@@ -6,6 +6,7 @@
 - For private configurations, reference the private repo as documented in `PRIVATE_REPO_SETUP.md`
 
 ## Dual-remote workflow hints
+
 - Public remote: `origin`
 - Private remote: `private`
 - Keep sensitive tasks/envs in the private repo only
