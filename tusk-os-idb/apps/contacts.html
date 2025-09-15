@@ -1,144 +1,175 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TUSK • Contacts (IDB)</title>
-  <link rel="stylesheet" href="../lib/ui.css" />
-  <script defer src="../lib/idb.js"></script>
-</head>
-<body>
-  <header class="app-header">
-    <div class="inner">
-      <div class="brand"><span class="dot"></span> TUSK-OS</div>
-      <nav class="nav">
-        <a href="start.html">Home</a>
-        <a href="crm.html">Leads</a>
-        <a href="accounts.html">Accounts</a>
-        <a class="active" href="contacts.html">Contacts</a>
-        <a href="deals.html">Deals</a>
-        <a href="activities.html">Activities</a>
-        <a href="settings.html">Settings</a>
-      </nav>
-    </div>
-  </header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TUSK • Contacts (IDB)</title>
+    <link rel="stylesheet" href="../lib/ui.css" />
+    <script defer src="../lib/idb.js"></script>
+    <script defer src="../lib/layout.js"></script>
+  </head>
+  <body>
+    <header class="app-header"></header>
 
-  <main class="container">
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="kicker">People</div>
-          <div class="card-title">Contacts</div>
+    <main class="container">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="kicker">People</div>
+            <div class="card-title">Contacts</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn primary" id="add">+ New Contact</button>
+          </div>
         </div>
-        <div class="card-actions">
-          <button class="btn primary" id="add">+ New Contact</button>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Account</th>
+                <th>Title</th>
+                <th>Owner</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
         </div>
       </div>
-      <div class="table-wrap">
-        <table class="table">
-          <thead>
-            <tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Account</th><th>Title</th><th>Owner</th><th>Created</th></tr>
-          </thead>
-          <tbody id="rows"></tbody>
-        </table>
-      </div>
-    </div>
-  </main>
+    </main>
 
-  <dialog id="contactDialog">
-    <div class="dialog-header">New Contact</div>
-    <div class="dialog-body">
-      <div class="field">
-        <label for="cName">Name</label>
-        <input class="input" id="cName" placeholder="Jane Doe" />
+    <dialog id="contactDialog">
+      <div class="dialog-header">New Contact</div>
+      <div class="dialog-body">
+        <div class="field">
+          <label for="cName">Name</label>
+          <input class="input" id="cName" placeholder="Jane Doe" />
+        </div>
+        <div class="field">
+          <label for="cEmail">Email</label>
+          <input class="input" id="cEmail" placeholder="jane@example.com" />
+        </div>
+        <div class="field">
+          <label for="cPhone">Phone</label>
+          <input class="input" id="cPhone" placeholder="+1 555-0100" />
+        </div>
+        <div class="field">
+          <label for="cAccount">Account ID</label>
+          <input class="input" id="cAccount" placeholder="1" />
+        </div>
+        <div class="field">
+          <label for="cTitle">Title</label>
+          <input class="input" id="cTitle" placeholder="CTO" />
+        </div>
+        <div class="field">
+          <label for="cOwner">Owner</label>
+          <input class="input" id="cOwner" placeholder="you@company.com" />
+        </div>
+        <div class="field">
+          <label for="cNotes">Notes</label>
+          <input class="input" id="cNotes" placeholder="Short note" />
+        </div>
       </div>
-      <div class="field">
-        <label for="cEmail">Email</label>
-        <input class="input" id="cEmail" placeholder="jane@example.com" />
+      <div class="dialog-footer">
+        <button class="btn" id="cancelContact">Cancel</button>
+        <button class="btn primary" id="createContact">Create</button>
       </div>
-      <div class="field">
-        <label for="cPhone">Phone</label>
-        <input class="input" id="cPhone" placeholder="+1 555-0100" />
-      </div>
-      <div class="field">
-        <label for="cAccount">Account ID</label>
-        <input class="input" id="cAccount" placeholder="1" />
-      </div>
-      <div class="field">
-        <label for="cTitle">Title</label>
-        <input class="input" id="cTitle" placeholder="CTO" />
-      </div>
-      <div class="field">
-        <label for="cOwner">Owner</label>
-        <input class="input" id="cOwner" placeholder="you@company.com" />
-      </div>
-      <div class="field">
-        <label for="cNotes">Notes</label>
-        <input class="input" id="cNotes" placeholder="Short note" />
-      </div>
-    </div>
-    <div class="dialog-footer">
-      <button class="btn" id="cancelContact">Cancel</button>
-      <button class="btn primary" id="createContact">Create</button>
-    </div>
-  </dialog>
+    </dialog>
 
-  <div id="toast" class="toast"></div>
+    <div id="toast" class="toast"></div>
 
-  <script>
-    function showToast(msg, ms=2000){
-      const el = document.getElementById('toast');
-      el.textContent = msg;
-      el.classList.add('show');
-      setTimeout(()=>el.classList.remove('show'), ms);
-    }
-
-    async function load(){
-      await TuskIDB.ready();
-      const rows = await TuskIDB.listContacts(500);
-      const tbody = document.getElementById('rows');
-      if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="8" class="empty">No contacts yet. Click “New Contact”.</td></tr>`;
-        return;
+    <script>
+      function showToast(msg, ms = 2000) {
+        const el = document.getElementById("toast");
+        el.textContent = msg;
+        el.classList.add("show");
+        setTimeout(() => el.classList.remove("show"), ms);
       }
-      tbody.innerHTML = rows.map(r =>
-        `<tr><td>${r.id||''}</td><td>${r.name||''}</td><td>${r.email||''}</td><td>${r.phone||''}</td><td>${r.account_id||''}</td><td>${r.title||''}</td><td>${r.owner||''}</td><td>${r.created_at||''}</td></tr>`
-      ).join('');
-    }
 
-    function openDialog(){
-      const d = document.getElementById('contactDialog');
-      ['cName','cEmail','cPhone','cAccount','cTitle','cOwner','cNotes'].forEach(id => document.getElementById(id).value = '');
-      if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open','');
-      setTimeout(()=> document.getElementById('cName').focus(), 0);
-    }
-    function closeDialog(){
-      const d = document.getElementById('contactDialog');
-      if (typeof d.close === 'function') d.close(); else d.removeAttribute('open');
-    }
+      async function load() {
+        await TuskIDB.ready();
+        const rows = await TuskIDB.listContacts(500);
+        const tbody = document.getElementById("rows");
+        if (!rows.length) {
+          tbody.innerHTML = `<tr><td colspan="8" class="empty">No contacts yet. Click “New Contact”.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = rows
+          .map(
+            (r) =>
+              `<tr><td>${r.id || ""}</td><td>${r.name || ""}</td><td>${
+                r.email || ""
+              }</td><td>${r.phone || ""}</td><td>${
+                r.account_id || ""
+              }</td><td>${r.title || ""}</td><td>${r.owner || ""}</td><td>${
+                r.created_at || ""
+              }</td></tr>`
+          )
+          .join("");
+      }
 
-    async function createContact(){
-      const name = document.getElementById('cName').value.trim();
-      const email = document.getElementById('cEmail').value.trim() || null;
-      const phone = document.getElementById('cPhone').value.trim() || null;
-      const account_id = Number(document.getElementById('cAccount').value) || null;
-      const title = document.getElementById('cTitle').value.trim() || null;
-      const owner = document.getElementById('cOwner').value.trim() || null;
-      const notes = document.getElementById('cNotes').value.trim() || null;
-      if (!name) { showToast('Name is required'); return; }
-      await TuskIDB.addContact({ name, email, phone, account_id, title, owner, notes });
-      closeDialog();
-      showToast('Contact created');
-      load();
-    }
+      function openDialog() {
+        const d = document.getElementById("contactDialog");
+        [
+          "cName",
+          "cEmail",
+          "cPhone",
+          "cAccount",
+          "cTitle",
+          "cOwner",
+          "cNotes",
+        ].forEach((id) => (document.getElementById(id).value = ""));
+        if (typeof d.showModal === "function") d.showModal();
+        else d.setAttribute("open", "");
+        setTimeout(() => document.getElementById("cName").focus(), 0);
+      }
+      function closeDialog() {
+        const d = document.getElementById("contactDialog");
+        if (typeof d.close === "function") d.close();
+        else d.removeAttribute("open");
+      }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('add').onclick = openDialog;
-      document.getElementById('cancelContact').onclick = closeDialog;
-      document.getElementById('createContact').onclick = createContact;
-      document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') closeDialog(); });
-      load();
-    });
-  </script>
-</body>
+      async function createContact() {
+        const name = document.getElementById("cName").value.trim();
+        const email = document.getElementById("cEmail").value.trim() || null;
+        const phone = document.getElementById("cPhone").value.trim() || null;
+        const account_id =
+          Number(document.getElementById("cAccount").value) || null;
+        const title = document.getElementById("cTitle").value.trim() || null;
+        const owner = document.getElementById("cOwner").value.trim() || null;
+        const notes = document.getElementById("cNotes").value.trim() || null;
+        if (!name) {
+          showToast("Name is required");
+          return;
+        }
+        await TuskIDB.addContact({
+          name,
+          email,
+          phone,
+          account_id,
+          title,
+          owner,
+          notes,
+        });
+        closeDialog();
+        showToast("Contact created");
+        load();
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        TuskLayout.initLayout({ activeMain: "crm" });
+        document.getElementById("add").onclick = openDialog;
+        document.getElementById("cancelContact").onclick = closeDialog;
+        document.getElementById("createContact").onclick = createContact;
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") closeDialog();
+        });
+        load();
+      });
+    </script>
+  </body>
 </html>

@@ -1,140 +1,148 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TUSK • Start (IDB)</title>
-  <link rel="stylesheet" href="../lib/ui.css" />
-  <script defer src="../lib/idb.js"></script>
-  <script defer src="../lib/sqlite-export.js"></script>
-</head>
-<body>
-  <header class="app-header">
-    <div class="inner">
-      <div class="brand"><span class="dot"></span> TUSK-OS</div>
-      <nav class="nav">
-        <a class="active" href="start.html">Home</a>
-        <a href="crm.html">Leads</a>
-        <a href="accounts.html">Accounts</a>
-        <a href="contacts.html">Contacts</a>
-        <a href="deals.html">Deals</a>
-        <a href="activities.html">Activities</a>
-        <a href="settings.html">Settings</a>
-      </nav>
-    </div>
-  </header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TUSK • Start (IDB)</title>
+    <link rel="stylesheet" href="../lib/ui.css" />
+    <script defer src="../lib/idb.js"></script>
+    <script defer src="../lib/sqlite-export.js"></script>
+    <script defer src="../lib/layout.js"></script>
+  </head>
+  <body>
+    <header class="app-header"></header>
 
-  <main class="container">
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <div class="kicker">Overview</div>
-          <div class="card-title">Local Workspace (IndexedDB)</div>
-        </div>
-        <div class="card-actions">
-          <button class="btn secondary" id="exportJSON">Export JSON</button>
-          <button class="btn secondary" id="exportCSV">Export CSV</button>
-          <button class="btn" id="exportSQLite">Export SQLite</button>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col">
-          <div class="card">
-            <div class="card-header"><div class="card-title">Company</div></div>
-            <div class="subtle">Name</div>
-            <div id="company" style="font-weight:600; margin-top:4px;">—</div>
+    <main class="container">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="kicker">Overview</div>
+            <div class="card-title">Local Workspace (IndexedDB)</div>
+          </div>
+          <div class="card-actions">
+            <button class="btn secondary" id="exportJSON">Export JSON</button>
+            <button class="btn secondary" id="exportCSV">Export CSV</button>
+            <button class="btn" id="exportSQLite">Export SQLite</button>
           </div>
         </div>
-        <div class="col">
-          <div class="card">
-            <div class="card-header"><div class="card-title">Currency</div></div>
-            <div class="subtle">Default</div>
-            <div id="currency" style="font-weight:600; margin-top:4px;">—</div>
+        <div class="row">
+          <div class="col">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Company</div>
+              </div>
+              <div class="subtle">Name</div>
+              <div id="company" style="font-weight: 600; margin-top: 4px">
+                —
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Currency</div>
+              </div>
+              <div class="subtle">Default</div>
+              <div id="currency" style="font-weight: 600; margin-top: 4px">
+                —
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card">
+              <div class="card-header"><div class="card-title">Data</div></div>
+              <div class="subtle">Totals</div>
+              <div id="totals" style="font-weight: 600; margin-top: 4px">—</div>
+            </div>
           </div>
         </div>
-        <div class="col">
-          <div class="card">
-            <div class="card-header"><div class="card-title">Data</div></div>
-            <div class="subtle">Totals</div>
-            <div id="totals" style="font-weight:600; margin-top:4px;">—</div>
-          </div>
+        <div id="status" class="subtle"></div>
+        <div class="spacer"></div>
+        <div class="banner">
+          This variant uses IndexedDB natively (no WASM). Export anytime to
+          JSON, CSV, or a real SQLite file.
         </div>
       </div>
-      <div id="status" class="subtle"></div>
-      <div class="spacer"></div>
-      <div class="banner">
-        This variant uses IndexedDB natively (no WASM). Export anytime to JSON, CSV, or a real SQLite file.
-      </div>
-    </div>
-  </main>
+    </main>
 
-  <div id="toast" class="toast"></div>
+    <div id="toast" class="toast"></div>
 
-  <script>
-    function showToast(msg, ms = 2200) {
-      const el = document.getElementById('toast');
-      el.textContent = msg;
-      el.classList.add('show');
-      setTimeout(() => el.classList.remove('show'), ms);
-    }
+    <script>
+      function showToast(msg, ms = 2200) {
+        const el = document.getElementById("toast");
+        el.textContent = msg;
+        el.classList.add("show");
+        setTimeout(() => el.classList.remove("show"), ms);
+      }
 
-    window.addEventListener('DOMContentLoaded', async () => {
-      await TuskIDB.ready();
-      const cfg = await TuskIDB.getSettings();
-      document.getElementById('company').textContent = cfg.company || '—';
-      document.getElementById('currency').textContent = cfg.currency || '—';
+      window.addEventListener("DOMContentLoaded", async () => {
+        TuskLayout.initLayout({ activeMain: "home" });
+        await TuskIDB.ready();
+        const cfg = await TuskIDB.getSettings();
+        document.getElementById("company").textContent = cfg.company || "—";
+        document.getElementById("currency").textContent = cfg.currency || "—";
 
-      // counts
-      try {
-        const [leads, accounts, contacts, deals, activities] = await Promise.all([
-          TuskIDB.count('leads'),
-          TuskIDB.count('accounts'),
-          TuskIDB.count('contacts'),
-          TuskIDB.count('deals'),
-          TuskIDB.count('activities'),
-        ]);
-        document.getElementById('totals').textContent = `${leads} leads • ${accounts} accounts • ${contacts} contacts • ${deals} deals • ${activities} activities`;
-      } catch (e) { console.warn(e); }
-
-      document.getElementById('exportJSON').onclick = async () => {
-        const blob = await TuskIDB.exportJSON();
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'tusk-idb-backup.json';
-        a.click();
-        URL.revokeObjectURL(a.href);
-        document.getElementById('status').textContent = 'Exported JSON backup';
-        showToast('Exported JSON');
-      };
-
-      document.getElementById('exportCSV').onclick = async () => {
-        const blob = await TuskIDB.exportCSV();
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'leads.csv';
-        a.click();
-        URL.revokeObjectURL(a.href);
-        document.getElementById('status').textContent = 'Exported CSV';
-        showToast('Exported CSV');
-      };
-
-      document.getElementById('exportSQLite').onclick = async () => {
+        // counts
         try {
-          const blob = await TuskIDB_SQLiteExport.exportLeadsToSQLite(TuskIDB.listLeads.bind(TuskIDB));
-          const a = document.createElement('a');
+          const [leads, accounts, contacts, deals, activities] =
+            await Promise.all([
+              TuskIDB.count("leads"),
+              TuskIDB.count("accounts"),
+              TuskIDB.count("contacts"),
+              TuskIDB.count("deals"),
+              TuskIDB.count("activities"),
+            ]);
+          document.getElementById(
+            "totals"
+          ).textContent = `${leads} leads • ${accounts} accounts • ${contacts} contacts • ${deals} deals • ${activities} activities`;
+        } catch (e) {
+          console.warn(e);
+        }
+
+        document.getElementById("exportJSON").onclick = async () => {
+          const blob = await TuskIDB.exportJSON();
+          const a = document.createElement("a");
           a.href = URL.createObjectURL(blob);
-          a.download = 'tusk-idb.sqlite';
+          a.download = "tusk-idb-backup.json";
           a.click();
           URL.revokeObjectURL(a.href);
-          document.getElementById('status').textContent = 'Exported SQLite DB';
-          showToast('Exported SQLite');
-        } catch (e) {
-          console.error(e);
-          document.getElementById('status').textContent = 'SQLite export failed';
-          showToast('SQLite export failed');
-        }
-      };
-    });
-  </script>
-</body>
+          document.getElementById("status").textContent =
+            "Exported JSON backup";
+          showToast("Exported JSON");
+        };
+
+        document.getElementById("exportCSV").onclick = async () => {
+          const blob = await TuskIDB.exportCSV();
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "leads.csv";
+          a.click();
+          URL.revokeObjectURL(a.href);
+          document.getElementById("status").textContent = "Exported CSV";
+          showToast("Exported CSV");
+        };
+
+        document.getElementById("exportSQLite").onclick = async () => {
+          try {
+            const blob = await TuskIDB_SQLiteExport.exportLeadsToSQLite(
+              TuskIDB.listLeads.bind(TuskIDB)
+            );
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "tusk-idb.sqlite";
+            a.click();
+            URL.revokeObjectURL(a.href);
+            document.getElementById("status").textContent =
+              "Exported SQLite DB";
+            showToast("Exported SQLite");
+          } catch (e) {
+            console.error(e);
+            document.getElementById("status").textContent =
+              "SQLite export failed";
+            showToast("SQLite export failed");
+          }
+        };
+      });
+    </script>
+  </body>
 </html>
