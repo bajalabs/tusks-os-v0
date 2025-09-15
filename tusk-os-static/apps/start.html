@@ -2,51 +2,123 @@
 <html>
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TUSK • Start</title>
+  <link rel="stylesheet" href="../lib/ui.css" />
   <script defer src="../lib/db.js"></script>
-  <style>
-    body { font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
-    .dock a { padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; text-decoration: none; margin-right: 8px; }
-    .dock { margin: 12px 0 20px; }
-  </style>
 </head>
 <body>
-  <h1>TUSK-OS (Static v0)</h1>
-  <p>Company: <strong id="company">—</strong> · Currency: <strong id="currency">—</strong></p>
-  <div class="dock">
-    <a href="settings.html">Settings</a>
-    <a href="crm.html">CRM</a>
-  </div>
+  <header class="app-header">
+    <div class="inner">
+      <div class="brand"><span class="dot"></span> TUSK-OS</div>
+      <nav class="nav">
+        <a class="active" href="start.html">Home</a>
+        <a href="crm.html">CRM</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+    </div>
+  </header>
 
-  <h3>Database</h3>
-  <button id="export">Export DB (.sqlite)</button>
-  <input id="import" type="file" accept=".sqlite,application/octet-stream" />
-  <p id="status"></p>
+  <main class="container">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="kicker">Overview</div>
+          <div class="card-title">Local Workspace</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Company</div></div>
+            <div class="subtle">Name</div>
+            <div id="company" style="font-weight:600; margin-top:4px;">—</div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Currency</div></div>
+            <div class="subtle">Default</div>
+            <div id="currency" style="font-weight:600; margin-top:4px;">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="kicker">Database</div>
+          <div class="card-title">Local-first SQLite</div>
+        </div>
+        <div class="card-actions">
+          <button class="btn secondary" id="export">Export .sqlite</button>
+          <label class="btn" for="import">Import .sqlite</label>
+          <input id="import" type="file" accept=".sqlite,application/octet-stream" style="display:none" />
+        </div>
+      </div>
+      <div id="status" class="subtle"></div>
+      <div class="spacer"></div>
+      <div class="banner">
+        This workspace runs fully in your browser using WebAssembly (sql.js). Data is saved to your browser storage. Use Export to back up to a real SQLite file.
+      </div>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
 
   <script>
+    function showToast(msg, ms = 2200) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), ms);
+    }
+
     (async () => {
-      await TuskDB.ready();
+      try {
+        await TuskDB.ready();
+      } catch (err) {
+        console.error(err);
+        document.getElementById('status').textContent = 'Failed to initialize database.';
+        return;
+      }
+
       const cfg = TuskDB.getSettings();
       document.getElementById('company').textContent = cfg.company || '—';
       document.getElementById('currency').textContent = cfg.currency || '—';
 
       document.getElementById('export').onclick = async () => {
-        const bytes = await TuskDB.export();
-        const blob = new Blob([bytes], { type: 'application/x-sqlite3' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'tusk.sqlite';
-        a.click();
-        URL.revokeObjectURL(a.href);
-        document.getElementById('status').textContent = "Exported tusk.sqlite";
+        try {
+          const bytes = await TuskDB.export();
+          const blob = new Blob([bytes], { type: 'application/x-sqlite3' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'tusk.sqlite';
+          a.click();
+          URL.revokeObjectURL(a.href);
+          document.getElementById('status').textContent = "Exported tusk.sqlite";
+          showToast('Exported tusk.sqlite');
+        } catch (e) {
+          console.error(e);
+          document.getElementById('status').textContent = 'Export failed';
+          showToast('Export failed');
+        }
       };
 
       document.getElementById('import').onchange = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        const buf = await file.arrayBuffer();
-        await TuskDB.import(new Uint8Array(buf));
-        document.getElementById('status').textContent = "Imported DB · Reload CRM to see changes.";
+        try {
+          const buf = await file.arrayBuffer();
+          await TuskDB.import(new Uint8Array(buf));
+          document.getElementById('status').textContent = "Imported DB · Reload CRM to see changes.";
+          showToast('Imported database');
+        } catch (e) {
+          console.error(e);
+          document.getElementById('status').textContent = 'Import failed';
+          showToast('Import failed');
+        }
       };
     })();
   </script>
