@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TUSK-OS Tests: File → Markdown</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: #0b0d10;
+        color: #e6eaf0;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        background: #0f1216;
+        border-bottom: 1px solid #1b2026;
+        padding: 12px 16px;
+        z-index: 5;
+      }
+      header h1 {
+        font-size: 16px;
+        margin: 0;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 16px;
+        padding: 16px;
+      }
+      aside {
+        background: #0f1216;
+        border: 1px solid #1b2026;
+        border-radius: 8px;
+        padding: 12px;
+      }
+      section {
+        background: #0f1216;
+        border: 1px solid #1b2026;
+        border-radius: 8px;
+        padding: 12px;
+        min-height: 60vh;
+      }
+      .card {
+        background: #11151b;
+        border: 1px solid #1c232b;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+      label {
+        display: block;
+        margin: 8px 0 6px;
+        font-size: 12px;
+        color: #9fb0c3;
+      }
+      input[type="file"] {
+        width: 100%;
+      }
+      button {
+        background: #1a2733;
+        color: #e6eaf0;
+        border: 1px solid #243241;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #203141;
+      }
+      textarea {
+        width: 100%;
+        min-height: 40vh;
+        background: #0c0f13;
+        color: #e6eaf0;
+        border: 1px solid #1b2026;
+        border-radius: 6px;
+        padding: 10px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .muted {
+        color: #8aa0b6;
+        font-size: 12px;
+      }
+      .err {
+        color: #ff6b6b;
+        white-space: pre-wrap;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Tests — File Upload → Markdown (PDF/DOCX/TXT)</h1>
+    </header>
+    <main>
+      <aside>
+        <div class="card">
+          <label for="file">Select a file (.pdf, .docx, .txt, .md)</label>
+          <input id="file" type="file" />
+        </div>
+        <div class="card">
+          <div class="row">
+            <button id="parse">Parse → Markdown</button>
+            <button id="download" disabled>Download .md</button>
+          </div>
+          <p class="muted">
+            For file:// use, vendor libraries to
+            <code>tests/vendor/</code> before parsing PDF/DOCX:
+          </p>
+          <ul class="muted">
+            <li>
+              PDF: <code>tests/vendor/pdfjs/pdf.min.js</code> +
+              <code>pdf.worker.min.js</code>
+            </li>
+            <li>
+              DOCX: <code>tests/vendor/mammoth/mammoth.browser.min.js</code>
+            </li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="muted">Notes:</div>
+          <ul class="muted">
+            <li>PDF parsing extracts text from pages (no images/graphics)</li>
+            <li>DOCX is converted via mammoth to Markdown</li>
+            <li>TXT/MD are passed through</li>
+          </ul>
+        </div>
+      </aside>
+      <section>
+        <label>Markdown Preview</label>
+        <textarea
+          id="out"
+          placeholder="# Your markdown will appear here..."
+        ></textarea>
+        <div id="error" class="err"></div>
+      </section>
+    </main>
+    <script src="./lib/file-parse.js"></script>
+    <script>
+      (function () {
+        const $ = (s) => document.querySelector(s);
+        const fileInput = $("#file");
+        const parseBtn = $("#parse");
+        const dlBtn = $("#download");
+        const out = $("#out");
+        const err = $("#error");
+
+        let lastMd = "";
+
+        async function handleParse() {
+          err.textContent = "";
+          out.value = "";
+          dlBtn.disabled = true;
+          const f = fileInput.files && fileInput.files[0];
+          if (!f) {
+            err.textContent = "Please select a file first.";
+            return;
+          }
+          try {
+            const md = await window.TuskFileParse.parseFileToMarkdown(f);
+            lastMd = md || "";
+            out.value = lastMd;
+            dlBtn.disabled = !lastMd;
+          } catch (e) {
+            err.textContent = (e && e.message) || String(e);
+          }
+        }
+
+        function handleDownload() {
+          if (!lastMd) return;
+          const base = (fileInput.files[0].name || "output").replace(
+            /\.[^.]+$/,
+            ""
+          );
+          window.TuskFileParse.download(base + ".md", lastMd);
+        }
+
+        parseBtn.addEventListener("click", handleParse);
+        dlBtn.addEventListener("click", handleDownload);
+      })();
+    </script>
+  </body>
+</html>
