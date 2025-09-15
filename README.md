@@ -1,63 +1,77 @@
-# TUSK-OS v0 (IndexedDB-first)
+# TUSK‑OS v0
 
-TUSK-OS v0 is a pure-static, local-first CRM that runs entirely in your browser. The current path uses IndexedDB as the primary data store, with first-class exports to open formats.
+Local‑first, HTML‑native apps you can double‑click and own forever. TUSK‑OS v0 ships a simple CRM built with plain HTML/CSS/JS, IndexedDB for storage, and optional export to real SQLite. No build. No server. Works offline over file://.
 
-- Zero servers and zero build steps
-- Professional dark UI, fully offline-capable
-- Data stays local; export anytime to JSON, CSV, or SQLite
+- Local‑first: data stored in your browser via IndexedDB
+- Pure static: open `*.html` files directly, no tooling required
+- Exports: JSON (full), CSV, and SQLite (via sql.js)
+- Clean, responsive UI with a global header and per‑app side menu
 
-## Demo
+## Quick start (no server required)
 
-- Open `tusk-os-idb/apps/start.html` directly, or serve the repo with any static server
+- Open `tusk-os-idb/apps/start.html` directly in your browser
+- Try the other pages: `crm.html`, `accounts.html`, `contacts.html`, `deals.html`, `activities.html`, `settings.html`
+- Add a few records and use Export to download JSON/CSV/SQLite backups
 
-## Features
+Optional: serve over localhost if you prefer a stable origin
+- Any static server works. Example: `python3 -m http.server 1234`
+
+## What’s inside
 
 - Entities: Leads, Accounts, Contacts, Deals, Activities
-- Settings for workspace (company, currency)
-- Export:
-  - JSON: full database dump
-  - CSV: leads table
-  - SQLite: in-memory build via sql.js, downloadable `.sqlite`
+- Workspace Settings (company, currency)
+- Global Header (top) → apps; Sidebar (left) → sections for selected app (e.g., CRM → Leads/Accounts/...)
+- File:// support by design; zero dependencies to run
 
-## Tech
+## TUSKS Framework (HTML‑native pattern)
 
-- IndexedDB (native browser storage)
-- sql.js (WASM) for SQLite exports only; assets vendored under `tusk-os-idb/lib/sqljs/`
-- No frameworks; simple HTML/CSS/JS
+TUSKS is our opinionated way to build “native HTML file apps”:
+- One HTML page per app section; keep JS small and focused
+- IndexedDB is the primary store (see `tusk-os-idb/lib/idb.js`)
+- Shared shell for layout (`lib/layout.js`) and styles (`lib/ui.css`)
+- Exports handled by a small adapter (`lib/sqlite-export.js`)
 
-## Repo structure
+See: `docs/TUSKS-FRAMEWORK.md` for principles, patterns, and examples.
 
-- `tusk-os-idb/` – current implementation (apps + lib)
-- `BackPack-v0/` – plans and research
-  - `Research/Database-and-Localhost-Journey.md` – deep dive into our storage journey
-- `.github/` – issue and PR templates
-- `PRIVATE_REPO_SETUP.md` – how to pair with a private companion repo for data/env
-- `LICENSE`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md` – open-source essentials
+## Architecture and development
 
-## Dual-remote setup
+- Architecture: `docs/ARCHITECTURE.md` (modules, data model, exports, UI shell)
+- Development: `docs/DEVELOPMENT.md` (add a new page, CRUD patterns, dialogs, testing)
+- Roadmap: `docs/ROADMAP.md`
+- Vision: `docs/VISION.md` (summary; links to the full vision document)
 
-We support using a private companion repository alongside this public repo:
+## Repository structure
+
+- `tusk-os-idb/` — app pages (`apps/`) and shared libs (`lib/`)
+- `BackPack-v0/` — plans + in‑depth research (see Vision)
+- `.github/` — issue/PR templates and CODEOWNERS
+- `docs/` — architecture, framework, development, roadmap, vision summary
+- `LICENSE`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`
+
+## Dual‑remote workflow (optional)
+
+Many users mirror this public repo to a private one for local tasks and experiments:
 
 - Public: `origin` → https://github.com/bajalabs/tusks-os-v0
 - Private: `private` → https://github.com/bajalabs/tusks-os-private
 
-Push to both as needed:
+Push both:
 
 ```sh
 git push origin main
 git push private main
 ```
 
-Use branches to isolate local launchers, tasks, etc. (e.g., `localhost`). Keep secrets and machine-specific files only in the private repo.
+Keep secrets and machine‑specific files only in the private repo.
 
 ## Contributing
 
-See `CONTRIBUTING.md`. By participating, you agree to the `CODE_OF_CONDUCT.md`.
+We welcome issues and PRs. Start with `CONTRIBUTING.md`. By participating, you agree to our `CODE_OF_CONDUCT.md`.
 
 ## Security
 
-See `SECURITY.md` to report vulnerabilities.
+Please see `SECURITY.md` for responsible disclosure instructions.
 
 ## License
 
-MIT © 2025 BajaLabs
+GPL‑3.0 © 2025 BajaLabs. See `LICENSE`.
