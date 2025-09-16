@@ -12,7 +12,13 @@ To enable PDF and DOCX parsing entirely offline over file://, place the followin
 
 You can obtain official builds from:
 
-- PDF.js: https://github.com/mozilla/pdf.js/releases (use the prebuilt `pdf.min.js` + `pdf.worker.min.js`)
-- mammoth.js: https://github.com/mwilliamson/mammoth.js/ (use `dist/mammoth.browser.min.js`)
+- PDF.js: unpkg serves the 4.3.136 build artifacts reliably:
+
+  - https://unpkg.com/pdfjs-dist@4.3.136/build/pdf.min.mjs
+  - https://unpkg.com/pdfjs-dist@4.3.136/build/pdf.worker.min.mjs
+    Save them locally as `tests/vendor/pdfjs/pdf.min.js` and `tests/vendor/pdfjs/pdf.worker.min.js` respectively (renaming from .mjs is fine for script tag usage here).
+
+- mammoth.js browser build:
+  - https://unpkg.com/mammoth@1.6.0/mammoth.browser.min.js
 
 Place files exactly with the above names so `tests/lib/file-parse.js` can load them via relative paths.

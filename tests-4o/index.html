@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TUSK-OS Tests 4o: File → Markdown → AI Analysis</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: #0b0d10;
+        color: #e6eaf0;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        background: #0f1216;
+        border-bottom: 1px solid #1b2026;
+        padding: 12px 16px;
+        z-index: 5;
+      }
+      header h1 {
+        font-size: 16px;
+        margin: 0;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 16px;
+        padding: 16px;
+      }
+      aside,
+      section {
+        background: #0f1216;
+        border: 1px solid #1b2026;
+        border-radius: 8px;
+        padding: 12px;
+      }
+      .card {
+        background: #11151b;
+        border: 1px solid #1c232b;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+      label {
+        display: block;
+        margin: 8px 0 6px;
+        font-size: 12px;
+        color: #9fb0c3;
+      }
+      input[type="file"],
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+      }
+      button {
+        background: #1a2733;
+        color: #e6eaf0;
+        border: 1px solid #243241;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #203141;
+      }
+      textarea {
+        width: 100%;
+        min-height: 40vh;
+        background: #0c0f13;
+        color: #e6eaf0;
+        border: 1px solid #1b2026;
+        border-radius: 6px;
+        padding: 10px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 13px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .muted {
+        color: #8aa0b6;
+        font-size: 12px;
+      }
+      .err {
+        color: #ff6b6b;
+        white-space: pre-wrap;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+      }
+      .ok {
+        color: #7ce38b;
+        font-size: 12px;
+      }
+      code {
+        background: #0c0f13;
+        padding: 2px 4px;
+        border-radius: 4px;
+        border: 1px solid #1b2026;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Tests 4o — File Upload → Markdown → AI Analysis (PDF/DOCX/TXT)</h1>
+    </header>
+    <main>
+      <aside>
+        <div class="card">
+          <label for="file">Select a file (.pdf, .docx, .txt, .md)</label>
+          <input id="file" type="file" />
+        </div>
+        <div class="card">
+          <div class="row">
+            <button id="parse">Parse → Markdown</button>
+            <button id="download" disabled>Download .md</button>
+          </div>
+          <p class="muted">
+            Uses vendors from <code>../tests/vendor/</code> (no duplication).
+            Ensure:
+          </p>
+          <ul class="muted">
+            <li>
+              PDF: <code>../tests/vendor/pdfjs/pdf.min.js</code> +
+              <code>pdf.worker.min.js</code> or ESM variants
+            </li>
+            <li>
+              DOCX: <code>../tests/vendor/mammoth/mammoth.browser.min.js</code>
+            </li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="row" style="justify-content: space-between">
+            <div>
+              <div class="muted">OpenAI API key (stored in localStorage)</div>
+              <input id="apiKey" type="password" placeholder="sk-..." />
+              <div class="row">
+                <button id="saveKey">Save Key</button>
+                <button id="clearKey">Clear</button>
+              </div>
+              <div id="keyStatus" class="muted"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="row">
+            <button id="analyze" disabled>Analyze with 4o</button>
+          </div>
+          <p class="muted">
+            Calls OpenAI 4o with the extracted Markdown. Nothing is sent until
+            you click Analyze.
+          </p>
+        </div>
+      </aside>
+      <section>
+        <label>Markdown Preview</label>
+        <textarea
+          id="out"
+          placeholder="# Your markdown will appear here..."
+        ></textarea>
+        <div id="error" class="err"></div>
+        <hr style="border-color: #1b2026" />
+        <label>AI Analysis</label>
+        <textarea
+          id="aiOut"
+          placeholder="AI analysis results will appear here..."
+        ></textarea>
+      </section>
+    </main>
+    <script src="./lib/file-parse.js"></script>
+    <script src="./lib/ai.js"></script>
+    <script>
+      (function () {
+        const $ = (s) => document.querySelector(s);
+        const fileInput = $("#file");
+        const parseBtn = $("#parse");
+        const dlBtn = $("#download");
+        const out = $("#out");
+        const err = $("#error");
+        const aiOut = $("#aiOut");
+        const apiKeyInput = $("#apiKey");
+        const saveKeyBtn = $("#saveKey");
+        const clearKeyBtn = $("#clearKey");
+        const analyzeBtn = $("#analyze");
+        const keyStatus = $("#keyStatus");
+
+        let lastMd = "";
+
+        function loadKey() {
+          const k = localStorage.getItem("openai_api_key") || "";
+          apiKeyInput.value = k ? "••••-saved" : "";
+          analyzeBtn.disabled = !k || !lastMd;
+          keyStatus.textContent = k
+            ? "Key saved in localStorage (masked)"
+            : "No key saved";
+        }
+
+        function saveKey() {
+          const v = apiKeyInput.value.trim();
+          if (!v || !/^sk-/.test(v)) {
+            keyStatus.textContent = "Enter a valid key starting with sk-";
+            return;
+          }
+          localStorage.setItem("openai_api_key", v);
+          loadKey();
+        }
+
+        function clearKey() {
+          localStorage.removeItem("openai_api_key");
+          apiKeyInput.value = "";
+          loadKey();
+        }
+
+        async function handleParse() {
+          err.textContent = "";
+          out.value = "";
+          aiOut.value = "";
+          dlBtn.disabled = true;
+          analyzeBtn.disabled = true;
+          const f = fileInput.files && fileInput.files[0];
+          if (!f) {
+            err.textContent = "Please select a file first.";
+            return;
+          }
+          try {
+            const md = await window.TuskFileParse.parseFileToMarkdown(f);
+            lastMd = md || "";
+            out.value = lastMd;
+            dlBtn.disabled = !lastMd;
+            const hasKey = !!localStorage.getItem("openai_api_key");
+            analyzeBtn.disabled = !(hasKey && lastMd);
+          } catch (e) {
+            err.textContent = (e && e.message) || String(e);
+          }
+        }
+
+        function handleDownload() {
+          if (!lastMd) return;
+          const base = (fileInput.files[0].name || "output").replace(
+            /\.[^.]+$/,
+            ""
+          );
+          window.TuskFileParse.download(base + ".md", lastMd);
+        }
+
+        async function handleAnalyze() {
+          err.textContent = "";
+          aiOut.value = "";
+          const key = localStorage.getItem("openai_api_key");
+          if (!key) {
+            err.textContent = "Missing OpenAI key.";
+            return;
+          }
+          if (!lastMd) {
+            err.textContent = "No markdown to analyze.";
+            return;
+          }
+          try {
+            const result = await window.TuskAI.analyzeWith4o(key, lastMd);
+            aiOut.value = result || "";
+          } catch (e) {
+            aiOut.value = "";
+            err.textContent = (e && e.message) || String(e);
+          }
+        }
+
+        parseBtn.addEventListener("click", handleParse);
+        dlBtn.addEventListener("click", handleDownload);
+        analyzeBtn.addEventListener("click", handleAnalyze);
+        saveKeyBtn.addEventListener("click", saveKey);
+        clearKeyBtn.addEventListener("click", clearKey);
+        loadKey();
+      })();
+    </script>
+  </body>
+</html>

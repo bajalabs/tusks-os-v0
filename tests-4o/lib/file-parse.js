@@ -1,10 +1,6 @@
 (function () {
-  // tests/lib/file-parse.js
-  // Standalone parsing utilities for converting uploads to Markdown.
-  // Goals:
-  // - Work offline over file://
-  // - Prefer vendored libs in ./vendor (relative to tests/index.html)
-  // - Graceful fallback with helpful error messages
+  // tests-4o/lib/file-parse.js
+  // Reuse the proven parser from tests/, but point to ../tests/vendor to avoid large file duplication.
 
   async function readAsArrayBuffer(file) {
     return new Promise((res, rej) => {
@@ -42,7 +38,6 @@
     });
   }
 
-  // Load an ES module and attach it to window.pdfjsLib as a namespace
   function loadPdfJsAsModule(src) {
     return new Promise((res, rej) => {
       const s = document.createElement("script");
@@ -59,33 +54,26 @@
 
   async function ensurePdfJs() {
     if (window.pdfjsLib) return true;
-    // Try common UMD bundles first
-    const candidates = ["./vendor/pdfjs/pdf.min.js", "./vendor/pdfjs/pdf.js"];
-    for (const src of candidates) {
+    const base = "../tests/vendor/pdfjs";
+    const umdCandidates = [`${base}/pdf.min.js`, `${base}/pdf.js`];
+    for (const src of umdCandidates) {
       try {
         await loadScript(src);
         if (window.pdfjsLib) {
           try {
-            window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-              "./vendor/pdfjs/pdf.worker.min.js";
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = `${base}/pdf.worker.min.js`;
           } catch {}
           return true;
         }
       } catch {}
     }
-    // Fallback: try importing as ES module and assign to window.pdfjsLib
-    const moduleCandidates = [
-      "./vendor/pdfjs/pdf.min.js",
-      "./vendor/pdfjs/pdf.min.mjs",
-      "./vendor/pdfjs/pdf.mjs",
-    ];
-    for (const src of moduleCandidates) {
+    const esmCandidates = [`${base}/pdf.min.mjs`, `${base}/pdf.mjs`];
+    for (const src of esmCandidates) {
       try {
         await loadPdfJsAsModule(src);
         if (window.pdfjsLib) {
           try {
-            window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-              "./vendor/pdfjs/pdf.worker.min.js";
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = `${base}/pdf.worker.min.js`;
           } catch {}
           return true;
         }
@@ -97,15 +85,13 @@
   async function ensureMammoth() {
     if (window.mammoth) return true;
     try {
-      await loadScript("./vendor/mammoth/mammoth.browser.min.js");
+      await loadScript("../tests/vendor/mammoth/mammoth.browser.min.js");
       return !!window.mammoth;
     } catch {}
     return false;
   }
 
-  // Basic text to markdown fallback (very naive)
   function textToMarkdown(text) {
-    // collapse excessive spaces and ensure line breaks preserved
     return String(text || "").replace(/\r\n/g, "\n");
   }
 
@@ -113,7 +99,7 @@
     const ok = await ensurePdfJs();
     if (!ok)
       throw new Error(
-        "pdf.js not available. Ensure a compatible build is vendored at tests/vendor/pdfjs/ (pdf.min.js + pdf.worker.min.js)."
+        "pdf.js not available. Ensure vendors exist under tests/vendor/pdfjs/"
       );
     const buf = await readAsArrayBuffer(file);
     const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
@@ -132,7 +118,7 @@
     const ok = await ensureMammoth();
     if (!ok)
       throw new Error(
-        "mammoth not available. Vendor it into tests/vendor/mammoth/"
+        "mammoth not available. Ensure vendors exist under tests/vendor/mammoth/"
       );
     const buf = await readAsArrayBuffer(file);
     const result = await window.mammoth.convertToMarkdown({ arrayBuffer: buf });
